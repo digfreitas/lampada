@@ -24,6 +24,10 @@ O repositório é público. **O texto da Bíblia (NAA) e qualquer arquivo conver
 2. Esperar um ou dois minutos para o GitHub Pages publicar.
 3. No celular, abrir o app com internet, fechar e abrir de novo.
 
+## Direitos
+
+© 2026 digfreitas. Todos os direitos reservados. Nenhuma licença de uso, cópia ou distribuição é concedida. Isso vale para o código do app; as fontes têm licença própria, indicada abaixo.
+
 ## Créditos
 
 Fontes Literata, Figtree e Caveat, sob a licença SIL Open Font License.
