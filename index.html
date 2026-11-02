@@ -3,17 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lâmpada</title>
-<meta name="description" content="Lâmpada: plano de leitura bíblica de uso pessoal">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#15343C">
+<title>Lâmpada</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lâmpada">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="fontes.css">
 <style>
 :root{
@@ -329,6 +327,26 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.5}
 .listrow small{color:var(--tinta-2);font-size:13px}
 .imgs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .imgs button canvas{width:100%;border-radius:8px;display:block}
+
+/* versão pessoal: texto real, versões importadas, backup */
+.tit{font-family:var(--f-ui);font-size:15px;font-weight:700;line-height:1.35;color:var(--tinta);margin:20px 0 8px;letter-spacing:.005em}
+.cap h2+.tit{margin-top:4px}
+.v.aus{color:var(--tinta-2)}
+.credito{font-size:12.5px;color:var(--tinta-2);line-height:1.5;padding:18px 22px 0;max-width:40em}
+.loading{padding:28px 0;color:var(--tinta-2);font-family:var(--f-ui);font-size:15px}
+.vrow{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--linha);width:100%;text-align:left}
+.vrow .sg{min-width:56px;font-weight:700;font-size:13.5px;letter-spacing:.02em;border:1px solid var(--linha);border-radius:999px;padding:5px 8px;text-align:center}
+.vrow .vn{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:15px}
+.vrow .vn small{color:var(--tinta-2);font-size:12.5px}
+.danger{color:#A33A3A}
+.btn-sec.danger{border-color:rgba(163,58,58,.35)}
+#app[data-app-theme="escuro"] .danger{color:#E58C8C}
+.btn-chama.danger-fill{background:#B54A4A;color:#fff}
+.hidden-file{position:fixed;left:-9999px;width:1px;height:1px;opacity:0}
+.res{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4}
+.res .ic{margin-top:1px}
+.res.ok .ic{stroke:var(--oliva)}
+.res.er .ic{stroke:#B54A4A}
 </style>
 </head>
 <body>
@@ -338,13 +356,20 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.5}
   <div id="layer"></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
+<input type="file" id="in-bib" class="hidden-file" multiple tabindex="-1" aria-hidden="true">
+<input type="file" id="in-bak" class="hidden-file" tabindex="-1" aria-hidden="true">
 <script>
 'use strict';
 /* ---------------- dados de referência ---------------- */
 const VC=[[31,25,24,26,32,22,24,22,29,32,32,20,18,24,21,16,27,33,38,18,34,24,20,67,34,35,46,22,35,43,55,32,20,31,29,43,36,30,23,23,57,38,34,34,28,34,31,22,33,26],[22,25,22,31,23,30,25,32,35,29,10,51,22,31,27,36,16,27,25,26,36,31,33,18,40,37,21,43,46,38,18,35,23,35,35,38,29,31,43,38],[17,16,17,35,19,30,38,36,24,20,47,8,59,57,33,34,16,30,37,27,24,33,44,23,55,46,34],[54,34,51,49,31,27,89,26,23,36,35,16,33,45,41,50,13,32,22,29,35,41,30,25,18,65,23,31,40,16,54,42,56,29,34,13],[46,37,29,49,33,25,26,20,29,22,32,32,18,29,23,22,20,22,21,20,23,30,25,22,19,19,26,68,29,20,30,52,29,12],[18,24,17,24,15,27,26,35,27,43,23,24,33,15,63,10,18,28,51,9,45,34,16,33],[36,23,31,24,31,40,25,35,57,18,40,15,25,20,20,31,13,31,30,48,25],[22,23,18,22],[28,36,21,22,12,21,17,22,27,27,15,25,23,52,35,23,58,30,24,42,15,23,29,22,44,25,12,25,11,31,13],[27,32,39,12,25,23,29,18,13,19,27,31,39,33,37,23,29,33,43,26,22,51,39,25],[53,46,28,34,18,38,51,66,28,29,43,33,34,31,34,34,24,46,21,43,29,53],[18,25,27,44,27,33,20,29,37,36,21,21,25,29,38,20,41,37,37,21,26,20,37,20,30],[54,55,24,43,26,81,40,40,44,14,47,40,14,17,29,43,27,17,19,8,30,19,32,31,31,32,34,21,30],[17,18,17,22,14,42,22,18,31,19,23,16,22,15,19,14,19,34,11,37,20,12,21,27,28,23,9,27,36,27,21,33,25,33,27,23],[11,70,13,24,17,22,28,36,15,44],[11,20,32,23,19,19,73,18,38,39,36,47,31],[22,23,15,17,14,14,10,17,32,3],[22,13,26,21,27,30,21,22,35,22,20,25,28,22,35,22,16,21,29,29,34,30,17,25,6,14,23,28,25,31,40,22,33,37,16,33,24,41,30,24,34,17],[6,12,8,8,12,10,17,9,20,18,7,8,6,7,5,11,15,50,14,9,13,31,6,10,22,12,14,9,11,12,24,11,22,22,28,12,40,22,13,17,13,11,5,26,17,11,9,14,20,23,19,9,6,7,23,13,11,11,17,12,8,12,11,10,13,20,7,35,36,5,24,20,28,23,10,12,20,72,13,19,16,8,18,12,13,17,7,18,52,17,16,15,5,23,11,13,12,9,9,5,8,28,22,35,45,48,43,13,31,7,10,10,9,8,18,19,2,29,176,7,8,9,4,8,5,6,5,6,8,8,3,18,3,3,21,26,9,8,24,13,10,7,12,15,21,10,20,14,9,6],[33,22,35,27,23,35,27,36,18,32,31,28,25,35,33,33,28,24,29,30,31,29,35,34,28,28,27,28,27,33,31],[18,26,22,16,20,12,29,17,18,20,10,14],[17,17,11,16,16,13,13,14],[31,22,26,6,30,13,25,22,21,34,16,6,22,32,9,14,14,7,25,6,17,25,18,23,12,21,13,29,24,33,9,20,24,17,10,22,38,22,8,31,29,25,28,28,25,13,15,22,26,11,23,15,12,17,13,12,21,14,21,22,11,12,19,12,25,24],[19,37,25,31,31,30,34,22,26,25,23,17,27,22,21,21,27,23,15,18,14,30,40,10,38,24,22,17,32,24,40,44,26,22,19,32,21,28,18,16,18,22,13,30,5,28,7,47,39,46,64,34],[22,22,66,22,22],[28,10,27,17,17,14,27,18,11,22,25,28,23,23,8,63,24,32,14,49,32,31,49,27,17,21,36,26,21,26,18,32,33,31,15,38,28,23,29,49,26,20,27,31,25,24,23,35],[21,49,30,37,31,28,28,27,27,21,45,13],[11,23,5,19,15,11,16,14,17,15,12,14,16,9],[20,32,21],[15,16,15,13,27,14,17,14,15],[21],[17,10,10,11],[16,13,12,13,15,16,20],[15,13,19],[17,20,19],[18,15,20],[15,23],[21,13,10,14,11,15,14,23,17,12,17,14,9,21],[14,17,18,6],[25,23,17,25,48,34,29,34,38,42,30,50,58,36,39,28,27,35,30,34,46,46,39,51,46,75,66,20],[45,28,35,41,43,56,37,38,50,52,33,44,37,72,47,20],[80,52,38,44,39,49,50,56,62,42,54,59,35,35,32,31,37,43,48,47,38,71,56,53],[51,25,36,54,47,71,53,59,41,42,57,50,38,31,27,33,26,40,42,31,25],[26,47,26,37,42,15,60,40,43,48,30,25,52,28,41,40,34,28,41,38,40,30,35,27,27,32,44,31],[32,29,31,25,21,23,25,39,33,21,36,21,14,23,33,27],[31,16,23,21,13,20,40,13,27,33,34,31,13,40,58,24],[24,17,18,18,21,18,16,24,15,18,33,21,14],[24,21,29,31,26,18],[23,22,21,32,33,24],[30,30,21,23],[29,23,25,18],[10,20,13,18,28],[12,17,18],[20,15,16,16,25,21],[18,26,17,22],[16,15,15],[25],[14,18,19,16,14,20,28,13,28,39,40,29,25],[27,26,18,17,20],[25,25,22,19,14],[21,22,18],[10,29,24,21,21],[13],[14],[25],[20,29,22,11,14,17,17,13,21,11,19,17,18,20,8,21,18,24,21,15,27,21]];
 const BK=[["Gênesis","Gn"],["Êxodo","Êx"],["Levítico","Lv"],["Números","Nm"],["Deuteronômio","Dt"],["Josué","Js"],["Juízes","Jz"],["Rute","Rt"],["1 Samuel","1Sm"],["2 Samuel","2Sm"],["1 Reis","1Rs"],["2 Reis","2Rs"],["1 Crônicas","1Cr"],["2 Crônicas","2Cr"],["Esdras","Ed"],["Neemias","Ne"],["Ester","Et"],["Jó","Jó"],["Salmos","Sl"],["Provérbios","Pv"],["Eclesiastes","Ec"],["Cânticos","Ct"],["Isaías","Is"],["Jeremias","Jr"],["Lamentações","Lm"],["Ezequiel","Ez"],["Daniel","Dn"],["Oseias","Os"],["Joel","Jl"],["Amós","Am"],["Obadias","Ob"],["Jonas","Jn"],["Miqueias","Mq"],["Naum","Na"],["Habacuque","Hc"],["Sofonias","Sf"],["Ageu","Ag"],["Zacarias","Zc"],["Malaquias","Ml"],["Mateus","Mt"],["Marcos","Mc"],["Lucas","Lc"],["João","Jo"],["Atos","At"],["Romanos","Rm"],["1 Coríntios","1Co"],["2 Coríntios","2Co"],["Gálatas","Gl"],["Efésios","Ef"],["Filipenses","Fp"],["Colossenses","Cl"],["1 Tessalonicenses","1Ts"],["2 Tessalonicenses","2Ts"],["1 Timóteo","1Tm"],["2 Timóteo","2Tm"],["Tito","Tt"],["Filemom","Fm"],["Hebreus","Hb"],["Tiago","Tg"],["1 Pedro","1Pe"],["2 Pedro","2Pe"],["1 João","1Jo"],["2 João","2Jo"],["3 João","3Jo"],["Judas","Jd"],["Apocalipse","Ap"]];
 const GRP=[[0,5,'Pentateuco'],[5,17,'Históricos'],[17,22,'Poéticos'],[22,27,'Profetas maiores'],[27,39,'Profetas menores'],[39,43,'Evangelhos'],[43,44,'Atos'],[44,57,'Cartas de Paulo'],[57,65,'Cartas gerais'],[65,66,'Apocalipse']];
-const VERS=[['NAA','Nova Almeida Atualizada','Formal, em linguagem atual'],['ARA','Almeida Revista e Atualizada','Formal, clássica e muito usada'],['ARC','Almeida Revista e Corrigida','Formal, linguagem clássica'],['NTLH','Nova Tradução na Linguagem de Hoje','Dinâmica, de leitura fácil'],['NVI','Nova Versão Internacional','Equilíbrio entre forma e sentido']];
+const APPV='2.0';
+const VDESC={NAA:'Formal, em linguagem atual',ARA:'Formal, clássica e muito usada',ARC:'Formal, linguagem clássica',NTLH:'Dinâmica, de leitura fácil',NVI:'Equilíbrio entre forma e sentido',NVT:'Dinâmica, em linguagem atual',IBB:'Formal, revisão de 1967',KJA:'Formal, baseada na King James',ONBV:'Linguagem simples e atual',BSB:'Inglês moderno, fiel aos originais',KJV:'Inglês clássico de 1611'};
+const VORD=['NAA','ARA','NVT','NTLH','IBB','KJA','ONBV','ARC','NVI','BSB','KJV'];
+/* Diferenças de numeração entre as Almeidas (e afins) e a KJV, usada como numeração de referência.
+   Chave "livro.capítulo" (livro de 0 a 65): [quantidade de versículos na versão, versículo da versão -> versículo de referência]. */
+const VMAP={'6.5':[32,v=>v===32?31:v],'8.20':[43,v=>v===43?42:v],'10.22':[54,v=>v<=43?v:v-1],'46.13':[13,v=>v===13?14:v],'63.1':[15,v=>v===15?14:v],'65.12':[18,v=>v===18?17:v]};
 const HL=[['Promessa','#F6DE74'],['Ensino','#C3E5B5'],['Oração','#BDD9F3'],['Aplicar','#F6C6D2'],['Dúvida','#F8CD9C']];
 const PCOL=['#EFA92E','#2F7F86','#5F7A4E','#B5577A'];
 const LV=[['Semente',0],['Broto',150],['Raiz',450],['Caule',900],['Ramo',1600],['Folha',2600],['Flor',4000],['Fruto',6000],['Árvore',9000],['Árvore junto às águas',13000]];
@@ -399,9 +424,108 @@ function label(units){
     parts.push(whole&&nC(b)===1?BK[b][0]:`${BK[b][0]} ${bookRange(g)}`);}
   return parts.join('; ');
 }
-const FR=['Na versão final, aqui aparece o texto licenciado.','O comprimento muda de um versículo para outro, como no texto real.','Esta frase serve apenas para avaliar a leitura e o layout.','Destaques, notas e marcadores ficam presos a esta referência.'];
-function vtext(b,c,v,ver){const h=(b*131+c*31+v*17)%7;let t=`Texto de exemplo de ${BK[b][0]} ${c}:${v}, ${ver}.`;if(h>1)t+=' '+FR[h%4];if(h>4)t+=' '+FR[(h+1)%4];return t;}
-function keyVerse(b,c){const n=nV(b,c);const fixed={'41.15':20,'42.3':16,'18.23':1,'18.1':3,'42.15':5,'39.5':14,'44.8':28,'43.2':42};return fixed[b+'.'+c]||1+((b*7+c*3)%n);}
+const fmtMB=n=>(n/1048576).toLocaleString('pt-BR',{maximumFractionDigits:1})+' MB';
+
+/* ---------------- Bíblias importadas (guardadas no IndexedDB do celular) ---------------- */
+const BIB={list:[],meta:{},ok:true,err:''};
+const BCACHE=new Map(),LOADING=new Set();
+const STO={persisted:null,usage:null};
+let DB=null,IMPORTING=false;
+function idbOpen(){return new Promise((res,rej)=>{if(!('indexedDB' in window)){rej(new Error('o navegador não oferece IndexedDB'));return;}
+  const r=indexedDB.open('lampada',1);
+  r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('versoes'))db.createObjectStore('versoes',{keyPath:'sigla'});if(!db.objectStoreNames.contains('livros'))db.createObjectStore('livros',{keyPath:'k'});};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error||new Error('erro ao abrir o banco'));r.onblocked=()=>rej(new Error('banco bloqueado por outra aba'));});}
+const idbReq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+const idbDone=tx=>new Promise((res,rej)=>{tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||new Error('gravação cancelada'));});
+async function bibInit(){
+  try{DB=await idbOpen();const all=await idbReq(DB.transaction('versoes').objectStore('versoes').getAll());BIB.meta={};for(const m of all)BIB.meta[m.sigla]=m;bibSort();}
+  catch(e){BIB.ok=false;BIB.err=String(e&&e.message||e);}
+}
+function bibSort(){const o=s=>{const i=VORD.indexOf(s);return i<0?99:i;};BIB.list=Object.keys(BIB.meta).sort((a,b)=>o(a)-o(b)||a.localeCompare(b));}
+const hasVer=s=>!!(s&&BIB.meta[s]);
+function okVer(...c){for(const s of c)if(hasVer(s))return s;return BIB.list[0]||null;}
+const verName=s=>BIB.meta[s]?BIB.meta[s].nome:(s||'');
+const verDesc=s=>VDESC[s]||(BIB.meta[s]&&String(BIB.meta[s].idioma).startsWith('en')?'Em inglês':'');
+function validaBiblia(d){
+  const bad='O arquivo não é uma Bíblia no formato do Lâmpada.';
+  if(!d||typeof d!=='object'||Array.isArray(d))return bad;
+  if(d.formato==='lampada-backup')return 'Este arquivo é um backup. Para usá-lo, toque em Restaurar backup.';
+  if(d.formato&&d.formato!=='lampada-biblia')return bad;
+  if(!d.sigla||!Array.isArray(d.livros)||!d.livros.length)return bad;
+  for(const l of d.livros)if(!l||!(l.n>=1&&l.n<=66)||!Array.isArray(l.capitulos))return `${bad} (livro ${l&&l.nome||'?'})`;
+  return null;
+}
+const normSig=s=>String(s).trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12)||'BIBLIA';
+async function importaBiblia(d){
+  const sig=normSig(d.sigla);
+  const caps=Array.from({length:66},()=>null);let tv=0,vz=0;
+  const tx=DB.transaction(['versoes','livros'],'readwrite');const sv=tx.objectStore('versoes'),sl=tx.objectStore('livros');
+  for(let b=0;b<66;b++)sl.delete(sig+'|'+b);
+  for(const l of d.livros){const b=l.n-1;
+    const cs=l.capitulos.map(c=>Array.isArray(c)?c.map(x=>typeof x==='string'?x:(x==null?'':String(x))):[]);
+    caps[b]=cs.map(c=>c.length);for(const c of cs)for(const v of c){tv++;if(!v.trim())vz++;}
+    sl.put({k:sig+'|'+b,capitulos:cs,titulos:l.titulos&&typeof l.titulos==='object'?l.titulos:{},unidos:l.unidos&&typeof l.unidos==='object'?l.unidos:{}});}
+  const nc=Array.isArray(d.correcoes)?d.correcoes.length:(d.correcoes&&typeof d.correcoes==='object'?Object.keys(d.correcoes).length:0);
+  const meta={sigla:sig,nome:String(d.nome||sig),idioma:String(d.idioma||''),credito:String(d.credito||''),fonte:String(d.fonte||''),geradoEm:String(d.geradoEm||'').slice(0,10),importadoEm:TODAY,versiculos:tv,vazios:vz,livros:d.livros.length,caps,correcoes:nc};
+  sv.put(meta);await idbDone(tx);
+  for(const k of [...BCACHE.keys()])if(k.startsWith(sig+'|'))BCACHE.delete(k);
+  BIB.meta[sig]=meta;bibSort();return meta;
+}
+async function removeBiblia(sig){
+  const tx=DB.transaction(['versoes','livros'],'readwrite');tx.objectStore('versoes').delete(sig);const sl=tx.objectStore('livros');for(let b=0;b<66;b++)sl.delete(sig+'|'+b);await idbDone(tx);
+  delete BIB.meta[sig];for(const k of [...BCACHE.keys()])if(k.startsWith(sig+'|'))BCACHE.delete(k);bibSort();
+}
+/* Livro de uma versão: devolve o livro se já está na memória; senão começa a carregar e devolve null (a tela se refaz ao terminar). */
+function bookOf(sig,b){
+  const m=BIB.meta[sig];if(!m||!DB||!m.caps[b])return {missing:true};
+  const k=sig+'|'+b;const x=BCACHE.get(k);if(x){BCACHE.delete(k);BCACHE.set(k,x);return x;}
+  if(!LOADING.has(k)){LOADING.add(k);
+    idbReq(DB.transaction('livros').objectStore('livros').get(k)).then(r=>{BCACHE.set(k,r||{missing:true});while(BCACHE.size>48)BCACHE.delete(BCACHE.keys().next().value);})
+      .catch(()=>BCACHE.set(k,{missing:true})).finally(()=>{LOADING.delete(k);refreshSoon();});}
+  return null;
+}
+function chLen(sig,b,c){const m=BIB.meta[sig];const a=m&&m.caps[b];return a?(a[c-1]||0):0;}
+function canon(sig,b,c,vv){const t=VMAP[b+'.'+c];if(t&&chLen(sig,b,c)===t[0])return t[1](vv);return Math.min(vv,nV(b,c));}
+/* Versículos da versão no capítulo c cujo número de referência cai entre v1 e v2.
+   Cada item: vv (número na versão), cv (número de referência), lab (rótulo, como "9-10" nos versículos unidos) e txt. */
+function verses(sig,b,c,v1,v2){
+  const bk=bookOf(sig,b);if(!bk)return null;if(bk.missing||!bk.capitulos[c-1])return [];
+  const ch=bk.capitulos[c-1],un=bk.unidos||{};const cover={};
+  for(const [key,end] of Object.entries(un)){const [cc,s]=key.split(':').map(Number);if(cc===c)for(let x=s+1;x<=end;x++)cover[x]=s;}
+  const out=[],seen=new Set();
+  const item=vv=>{const end=un[c+':'+vv];const o={vv,cv:canon(sig,b,c,vv),txt:ch[vv-1]||'',lab:String(vv)};if(end>vv){o.lab=`${vv}-${end}`;o.end=end;}return o;};
+  for(let vv=1;vv<=ch.length;vv++){const cv=canon(sig,b,c,vv);if(cv<v1||cv>v2)continue;
+    const t=ch[vv-1]||'';
+    if(!t.trim()&&cover[vv]){const s=cover[vv];if(!seen.has(s)){seen.add(s);out.push(item(s));}continue;}
+    if(seen.has(vv))continue;seen.add(vv);out.push(item(vv));}
+  return out;
+}
+/* Referência na numeração da própria versão (ex.: 2Co 13:13 na NAA é 13:14 na referência). */
+function verRef(ver,b,c,v1,v2){const vs=hasVer(ver)?verses(ver,b,c,v1,v2==null?v1:v2):null;if(!vs||!vs.length)return refStr(b,c,v1,v2);const z=vs[vs.length-1];return refStr(b,c,vs[0].vv,z.end||z.vv);}
+function textOf(sig,b,c,v1,v2){const vs=verses(sig,b,c,v1,v2==null?v1:v2);if(vs===null)return null;return vs.map(x=>x.txt.trim()).filter(Boolean).join(' ');}
+function vtext(b,c,v,ver){if(!hasVer(ver))return 'Importe uma Bíblia em Ajustes para ver o texto.';const t=textOf(ver,b,c,v,v);return t===null?'Carregando…':(t||'Este versículo não consta nesta versão.');}
+let REFRESH_T=null;
+function refreshSoon(){if(REFRESH_T)return;REFRESH_T=setTimeout(()=>{REFRESH_T=null;refresh();},0);}
+/* Refaz a tela depois de carregar texto, sem perder o que estava sendo digitado. */
+function refresh(){
+  const ae=document.activeElement,id=ae&&ae.id;let s0=null,s1=null;try{s0=ae.selectionStart;s1=ae.selectionEnd;}catch(e){}
+  const vals=[...document.querySelectorAll('#app input[id],#app textarea[id]')].filter(e=>e.type!=='file').map(e=>[e.id,e.value]);
+  render();
+  for(const [i,v] of vals){const e=document.getElementById(i);if(e&&!e.readOnly&&e.value!==v)e.value=v;}
+  if(id){const e=document.getElementById(id);if(e&&e!==document.activeElement){try{e.focus({preventScroll:true});if(s0!=null)e.setSelectionRange(s0,s1);}catch(_){}}}
+}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);}
+async function shareOrDownload(blob,name,title){
+  try{const f=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title});return 'shared';}}
+  catch(e){if(e&&e.name==='AbortError')return 'aborted';}
+  download(blob,name);return 'downloaded';
+}
+async function storageInfo(){
+  try{if(navigator.storage&&navigator.storage.persisted){STO.persisted=await navigator.storage.persisted();if(!STO.persisted&&navigator.storage.persist)STO.persisted=await navigator.storage.persist();}}catch(e){}
+  try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();STO.usage=e.usage;}}catch(e){}
+}
+const KEYV={'41.15':20,'42.3':16,'18.23':1,'18.1':3,'42.15':5,'39.5':14,'44.8':28,'43.2':42};
+function keyVerse(b,c){const n=nV(b,c);return KEYV[b+'.'+c]||1+((b*7+c*3)%n);}
 function lum(hex){const h=hex.replace('#','');const r=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4));return .2126*r[0]+.7152*r[1]+.0722*r[2];}
 function contrast(a,b){const A=lum(a),B=lum(b);return (Math.max(A,B)+.05)/(Math.min(A,B)+.05);}
 const ICP={
@@ -472,32 +596,17 @@ const planEnd=p=>p.days.length?p.days[p.days.length-1].date:p.start;
 const plan=id=>S.plans.find(p=>p.id===id);
 
 /* ---------------- estado ---------------- */
-const KEY='lampada-prototipo-v1';
+/* Dados pessoais (planos, leituras, notas...) ficam no armazenamento do navegador, na chave abaixo.
+   Os dados da demonstração (chave lampada-prototipo-v1) não são usados. */
+const KEY='lampada-v1';
 let S;
-function prefersDark(){try{const t=parent!==window?null:null;return document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
-function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===1)return s;}}catch(e){}return seed();}
+function prefersDark(){try{return matchMedia('(prefers-color-scheme: dark)').matches;}catch(e){return false;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){if(!save.warned){save.warned=true;setTimeout(()=>toast('Não consegui salvar no celular. Faça um backup em Ajustes.'),0);}}}
+function fixState(s){const d=seed();s.settings={...d.settings,...(s.settings||{})};for(const k of Object.keys(d))if(s[k]===undefined)s[k]=d[k];return s;}
+function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===1)return fixState(s);}}catch(e){}return seed();}
 function seed(){
-  const s={v:1,settings:{version:'NAA',reminder:'06:30',theme:prefersDark()?'escuro':'claro',reader:'claro',font:19,calm:false,notice:true},
+  return {v:1,created:TODAY,settings:{version:null,reminder:'06:30',theme:prefersDark()?'escuro':'claro',reader:'claro',font:19,calm:false,titles:true,lastBackup:null,backupSnooze:null},
     plans:[],reads:[],hl:{},hlAt:{},notes:[],marks:[],cols:['Ler depois','Para o grupo'],catchups:[],images:[],achAt:{}};
-  const all=[1,1,1,1,1,1,1];
-  const p1=newPlan({name:'Novo Testamento em 90 dias',version:'NAA',color:0,start:addD(TODAY,-40),dur:{t:'prazo',n:90,u:'dias'},wk:all,units:unitsFromBooks(rangeA(39,66))});
-  const p2=newPlan({name:'Salmos e Provérbios em 60 dias',version:'ARA',color:1,start:addD(TODAY,-5),dur:{t:'prazo',n:60,u:'dias'},wk:all,units:unitsFromBooks([18,19])});
-  s.plans.push(p1,p2);
-  const addRead=(p,d,i,origin,offsetMin)=>{for(const u of d.units){const at=pd(origin==='retroativa'?addD(d.date,1):d.date);at.setHours(6,25+((i*7)%40)+(offsetMin||0));
-    s.reads.push({id:uid(),plan:p.id,day:d.id,key:ukey(u),b:u.b,c:u.c,v1:u.v1,v2:u.v2,refDate:d.date,at:at.toISOString(),version:p.version,secs:origin==='rápida'?null:Math.round(uv(u)*(6+((i+u.c)%4)*.6)),origin,late:false});}};
-  p1.days.slice(0,39).forEach((d,i)=>addRead(p1,d,i,i===11?'retroativa':i===24?'rápida':'leitor'));
-  p2.days.slice(0,4).forEach((d,i)=>addRead(p2,d,i,'leitor',20));
-  const hl=(b,c,v,col,ago)=>{s.hl[`${b}.${c}.${v}`]=col;s.hlAt[`${b}.${c}.${v}`]=addD(TODAY,-ago);};
-  hl(39,5,14,0,38);hl(39,6,33,1,37);hl(40,10,45,2,30);hl(41,15,20,3,22);hl(42,3,16,0,17);hl(42,14,6,1,12);hl(43,2,42,4,9);hl(18,1,3,1,5);hl(18,23,1,0,3);
-  const note=(b,c,v1,v2,text,tags,ago)=>s.notes.push({id:uid(),b,c,v1,v2,text,tags,created:addD(TODAY,-ago),edited:addD(TODAY,-ago)});
-  note(41,15,20,20,'O pai corre ao encontro do filho antes de qualquer pedido de desculpas. Quero lembrar disso quando eu travar para pedir perdão.',['família'],22);
-  note(42,15,5,5,'Permanecer antes de produzir. Separar 10 minutos sem celular antes da leitura.',['rotina'],13);
-  note(43,2,42,42,'Dúvida para o grupo: como era o partir do pão no dia a dia das primeiras igrejas?',['estudo'],9);
-  note(18,1,3,3,'Árvore junto às águas: o fruto vem no tempo certo, não todo dia.',[],5);
-  const mk=(b,c,v,col,ago)=>s.marks.push({id:uid(),b,c,v,col,at:addD(TODAY,-ago)});
-  mk(39,28,19,'Ler depois',28);mk(42,17,21,'Para o grupo',11);mk(18,23,1,'Para o grupo',3);mk(44,8,28,'Ler depois',2);
-  return s;
 }
 
 /* ---------------- cálculo derivado ---------------- */
@@ -609,8 +718,14 @@ function nextUndone(p,from){const pc=CC.plan[p.id];for(let i=0;i<p.days.length;i
 function vHoje(){
   const st=CC.streak;let h='';
   const plans=S.plans;
+  const semBib=BIB.ok?'':`<div class="notice"><p>Este navegador não permitiu guardar as Bíblias (${esc(BIB.err)}). Abra o app instalado na tela inicial, fora do modo anônimo.</p></div>`;
+  if(!plans.length&&!BIB.list.length){
+    return `<section class="hero"><span class="h-date">${capi(fmtL(TODAY))}</span><h1 class="h-ref" style="margin-top:28px">Bem-vindo ao Lâmpada</h1><p class="h-meta">Para começar, importe as Bíblias guardadas no seu Google Drive, os arquivos terminados em -lampada.json.</p><div class="h-acts"><button class="btn-chama" data-a="importBib">Importar Bíblia</button></div></section>
+    <div class="pad">${semBib}<p class="sub">Dá para escolher vários arquivos de uma vez. Depois de importado, o texto fica no celular e funciona sem internet.</p><button class="btn-ghost wide" data-a="newPlan">${ic('plus','sm')} Criar um plano antes</button><button class="lnk" style="align-self:flex-start" data-a="restoreBak">Já tenho um backup: restaurar</button></div>`;
+  }
   if(!plans.length){
-    return `<section class="hero"><span class="h-date">${capi(fmtL(TODAY))}</span><h1 class="h-ref" style="margin-top:28px">Comece um plano de leitura</h1><p class="h-meta">Escolha livros, prazo e ritmo. O app monta o cronograma dia a dia.</p><button class="btn-chama" data-a="newPlan">Criar meu primeiro plano</button></section>`;
+    return `<section class="hero"><span class="h-date">${capi(fmtL(TODAY))}</span><h1 class="h-ref" style="margin-top:28px">Comece um plano de leitura</h1><p class="h-meta">Escolha livros, prazo e ritmo. O app monta o cronograma dia a dia.</p><button class="btn-chama" data-a="newPlan">Criar meu primeiro plano</button></section>
+    <div class="pad"><p class="sub">Versões no celular: ${BIB.list.map(esc).join(', ')}. Na aba Bíblia dá para ler livremente.</p><button class="lnk" style="align-self:flex-start" data-a="restoreBak">Restaurar um backup</button></div>`;
   }
   const p=plans[0],pc=CC.plan[p.id];
   const g=(0.7+Math.min(1,st.cur/40)*0.6).toFixed(2);
@@ -634,7 +749,10 @@ function vHoje(){
     ${body}
     <div class="h-prog"><div class="bar"><i style="width:${(pc.pct*100).toFixed(1)}%"></i></div><span class="num">${Math.floor(pc.pct*100)}% do plano</span></div></section>`;
   h+=`<div class="pad">`;
-  if(S.settings.notice)h+=`<div class="notice"><p>Protótipo para avaliação. O texto bíblico é de exemplo até a licença das versões, e os seus dados ficam só neste navegador.</p><button class="lnk" data-a="hideNotice">Entendi</button></div>`;
+  h+=semBib;
+  if(!BIB.list.length&&BIB.ok)h+=`<div class="notice"><p>Nenhuma Bíblia importada neste celular. Importe os arquivos do Google Drive para ler o texto.</p><button class="lnk" data-a="importBib">Importar</button></div>`;
+  {const lb=S.settings.lastBackup,sn=S.settings.backupSnooze;
+   if(S.reads.length+S.notes.length>0&&(!lb||diffD(lb,TODAY)>=30)&&(!sn||sn<=TODAY))h+=`<div class="notice"><p>${lb?`Seu último backup foi em ${fmtS(lb)}.`:'Você ainda não fez backup.'} Guarde uma cópia no Google Drive para não perder planos e notas se trocar de celular.</p><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><button class="lnk" data-a="backupNow">Fazer backup</button><button class="lnk" style="color:var(--tinta-2)" data-a="snoozeBackup">Depois</button></div></div>`;}
   const pend=plans.map(p=>[p,pending(p)]).filter(x=>x[1].length);
   if(pend.length){const n=pend.reduce((s,x)=>s+x[1].length,0);h+=`<button class="pend" data-a="openPending"><div><strong>${n} ${pl(n,'leitura pendente','leituras pendentes')}</strong><span>${pend.map(x=>esc(x[0].name)).join(' e ')}. Escolha como seguir.</span></div>${ic('chev')}</button>`;}
   for(const q of plans.slice(1)){
@@ -653,7 +771,7 @@ function vHoje(){
 function vPlano(){
   const p=plan(R.pid);if(!p)return vHoje();const pc=CC.plan[p.id];const pend=pending(p);
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${esc(p.name)}</h1></div><div class="pad">`;
-  h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version}. ${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
+  h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version?esc(p.version)+(hasVer(p.version)?'':' (não importada neste celular)'):'não escolhida'}.${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
   h+=`<div class="h-prog" style="color:var(--tinta-2);margin:0"><div class="bar" style="background:var(--linha)"><i style="width:${(pc.pct*100).toFixed(1)}%"></i></div><span class="num">${Math.floor(pc.pct*100)}%</span></div>`;
   h+=`<div class="chips">${pend.length?`<button class="chip" data-a="catchUp" data-p="${p.id}">Colocar em dia</button><button class="chip" data-a="postpone" data-p="${p.id}">Adiar o fim</button>`:''}<button class="chip" data-a="pause" data-p="${p.id}">${p.paused?'Retomar plano':'Pausar plano'}</button><button class="chip" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button></div>`;
   h+=`<p class="sub">Leu na Bíblia impressa? Use Marcar lido na linha do dia. Conta igual para o plano.</p><div class="daylist">`;
@@ -667,24 +785,40 @@ function vPlano(){
 /* ---------- Leitor ---------- */
 function noteAt(b,c,v){return S.notes.find(n=>n.b===b&&n.c===c&&v>=n.v1&&v<=n.v2);}
 function markAt(b,c,v){return S.marks.find(m=>m.b===b&&m.c===c&&m.v===v);}
-function verseHTML(b,c,v,ver){const k=`${b}.${c}.${v}`;const h=S.hl[k];const n=noteAt(b,c,v);const m=markAt(b,c,v);
-  return `<span class="v${h!=null?' h'+h:''}${SEL.has(k)?' sel':''}" data-a="tapVerse" data-k="${k}" role="button" tabindex="0" aria-pressed="${SEL.has(k)}"><sup>${v}</sup>${esc(vtext(b,c,v,ver))}${n?`<span class="mk" title="Tem nota"><svg viewBox="0 0 24 24">${ICP.pen}</svg></span>`:''}${m?`<span class="mk" title="Marcado"><svg viewBox="0 0 24 24">${ICP.mark}</svg></span>`:''}</span> `;}
-function readerVer(){return R.ver||(R.pid?plan(R.pid).version:S.settings.version);}
+/* x: versículo devolvido por verses(); a chave de destaques, notas e seleção usa a numeração de referência (x.cv). */
+function verseHTML(b,c,x){const k=`${b}.${c}.${x.cv}`;const h=S.hl[k];const n=noteAt(b,c,x.cv);const m=markAt(b,c,x.cv);const empty=!x.txt.trim();
+  return `<span class="v${h!=null?' h'+h:''}${SEL.has(k)?' sel':''}${empty?' aus':''}" data-a="tapVerse" data-k="${k}" role="button" tabindex="0" aria-pressed="${SEL.has(k)}"${empty?' title="Este versículo não consta no texto desta versão"':''}><sup>${x.lab}</sup>${empty?'—':esc(x.txt)}${n?`<span class="mk" title="Tem nota"><svg viewBox="0 0 24 24">${ICP.pen}</svg></span>`:''}${m?`<span class="mk" title="Marcado"><svg viewBox="0 0 24 24">${ICP.mark}</svg></span>`:''}</span> `;}
+function chapterHTML(ver,b,c,v1,v2){
+  if(!hasVer(ver))return `<div class="empty" style="margin:8px 0">Nenhuma Bíblia importada neste celular.<br><button class="btn-chama" style="margin-top:12px" data-a="importBib">Importar Bíblia</button></div>`;
+  const vs=verses(ver,b,c,v1,v2);
+  if(vs===null)return `<p class="loading">Carregando o texto…</p>`;
+  if(!vs.length)return `<p class="sub" style="padding:8px 0">Este trecho não está no arquivo da versão ${esc(ver)}. Troque a versão no botão ${esc(ver)} acima.</p>`;
+  const bk=bookOf(ver,b);const tits=S.settings.titles!==false&&bk&&bk.titulos?bk.titulos:{};
+  let h='',open=false;
+  for(const x of vs){const tt=tits[c+':'+x.vv];
+    if(tt){if(open){h+='</p>';open=false;}h+=String(tt).split(' / ').map(t=>`<h3 class="tit">${esc(t)}</h3>`).join('');}
+    if(!open){h+='<p class="txt">';open=true;}
+    h+=verseHTML(b,c,x);}
+  return h+(open?'</p>':'');
+}
+function creditHTML(ver){return hasVer(ver)&&BIB.meta[ver].credito?`<p class="credito">${esc(BIB.meta[ver].credito)}</p>`:'';}
+function readerVer(){const p=R.pid&&!R.free?plan(R.pid):null;return okVer(R.ver,p?p.version:null,S.settings.version);}
 function vReader(){
   const ver=readerVer();const th=S.settings.reader;
   let h=`<div class="reader ${th==='claro'?'':th}" style="--fs:${S.settings.font}px">`;
   if(R.free){
     const {b,c}=R;
-    h+=`<div class="topbar"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${BK[b][0]} ${c}</h1><button class="vpill" data-a="pickVer">${ver}</button><button class="iconbtn" data-a="aa" aria-label="Aparência do texto">${ic('aa')}</button></div>`;
-    h+=`<section class="cap"><h2>${BK[b][0]} ${c}</h2><p class="txt">${rangeA(1,nV(b,c)+1).map(v=>verseHTML(b,c,v,ver)).join('')}</p></section>`;
+    h+=`<div class="topbar"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${BK[b][0]} ${c}</h1><button class="vpill" data-a="pickVer">${esc(ver||'Versão')}</button><button class="iconbtn" data-a="aa" aria-label="Aparência do texto">${ic('aa')}</button></div>`;
+    h+=`<section class="cap"><h2>${BK[b][0]} ${c}</h2>${chapterHTML(ver,b,c,1,Infinity)}</section>${creditHTML(ver)}`;
     const prev=c>1?[b,c-1]:b>0?[b-1,nC(b-1)]:null,next=c<nC(b)?[b,c+1]:b<65?[b+1,1]:null;
     h+=`<div class="chapnav">${prev?`<button class="btn-sec" data-a="freeGo" data-b="${prev[0]}" data-c="${prev[1]}">${ic('back','sm')} ${BK[prev[0]][1]} ${prev[1]}</button>`:'<span></span>'}${next?`<button class="btn-sec" data-a="freeGo" data-b="${next[0]}" data-c="${next[1]}">${BK[next[0]][1]} ${next[1]} ${ic('chev','sm')}</button>`:''}</div>`;
   } else {
     const p=plan(R.pid),di=p.days.findIndex(d=>d.id===R.did),d=p.days[di];const pc=CC.plan[p.id];
-    h+=`<div class="topbar"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Dia ${di+1}: ${esc(label(d.units))}</h1><button class="vpill" data-a="pickVer">${ver}</button><button class="iconbtn" data-a="aa" aria-label="Aparência do texto">${ic('aa')}</button></div>`;
+    h+=`<div class="topbar"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Dia ${di+1}: ${esc(label(d.units))}</h1><button class="vpill" data-a="pickVer">${esc(ver||'Versão')}</button><button class="iconbtn" data-a="aa" aria-label="Aparência do texto">${ic('aa')}</button></div>`;
     for(const u of d.units){const r=CC.idx.get(p.id+'|'+d.id+'|'+ukey(u));
-      h+=`<section class="cap"><h2>${BK[u.b][0]} ${u.c}${isFull(u)?'':`:${u.v1}–${u.v2}`}</h2><p class="txt">${rangeA(u.v1,u.v2+1).map(v=>verseHTML(u.b,u.c,v,ver)).join('')}</p>
+      h+=`<section class="cap"><h2>${BK[u.b][0]} ${u.c}${isFull(u)?'':`:${u.v1}–${u.v2}`}</h2>${chapterHTML(ver,u.b,u.c,isFull(u)?1:u.v1,isFull(u)?Infinity:u.v2)}
       <div class="capdone"><button class="btn-done" data-a="markUnit" data-k="${ukey(u)}" aria-pressed="${!!r}">${r?ic('check','sm')+' Capítulo concluído':'Concluí este capítulo'}</button></div></section>`;}
+    h+=creditHTML(ver);
     const done=!!pc.dayDone[di];
     h+=`<div class="endday">${done?`<p class="tag-ok">${ic('check','sm')} Leitura do dia concluída</p><button class="btn-sec" data-a="showClose" data-p="${p.id}" data-d="${d.id}">Ver fechamento do dia</button>`:`<button class="btn-chama wide" data-a="finishDay">Concluir leitura do dia</button><p class="sub">Marca os capítulos que faltam com a data de hoje.</p>`}</div>`;
   }
@@ -697,14 +831,15 @@ function selRange(){const l=selList();const [b,c]=l[0];const vs=l.filter(x=>x[0]
 function actbar(){
   const r=selRange();const n=SEL.size;
   const cur=SEL.size?S.hl[[...SEL][0]]:null;
-  return `<div class="actbar" role="toolbar" aria-label="Ações para a seleção"><div class="selinfo"><span>${n} ${pl(n,'versículo selecionado','versículos selecionados')}: ${esc(refStr(r.b,r.c,r.v1,r.v2))}</span><button class="iconbtn" data-a="clearSel" aria-label="Limpar seleção">${ic('close','sm')}</button></div>
+  return `<div class="actbar" role="toolbar" aria-label="Ações para a seleção"><div class="selinfo"><span>${n} ${pl(n,'versículo selecionado','versículos selecionados')}: ${esc(verRef(readerVer(),r.b,r.c,r.v1,r.v2))}</span><button class="iconbtn" data-a="clearSel" aria-label="Limpar seleção">${ic('close','sm')}</button></div>
   <div class="swatches">${HL.map((x,i)=>`<button class="sw sw${i}" data-a="hl" data-i="${i}" aria-label="Destacar: ${x[0]}" aria-pressed="${cur===i}"></button>`).join('')}<button class="lnk" data-a="hl" data-i="-1" style="margin-left:auto">Remover</button></div>
   <div class="acts"><button data-a="noteSel">${ic('pen')}Anotar</button><button data-a="markSel">${ic('mark')}Marcar</button><button data-a="copySel">${ic('copy')}Copiar</button><button data-a="imgSel">${ic('img')}Imagem</button><button data-a="compSel">${ic('comp')}Comparar</button></div></div>`;
 }
 
 /* ---------- Bíblia ---------- */
 function vBiblia(){
-  let h=`<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Bíblia</h1><button class="vpill" data-a="pickVer" data-scope="padrao">${S.settings.version}</button></div>`;
+  let h=`<div class="pad"><div class="row"><h1 class="screen-title" style="flex:1">Bíblia</h1>${BIB.list.length?`<button class="vpill" data-a="pickVer" data-scope="padrao">${esc(okVer(S.settings.version))}</button>`:''}<button class="iconbtn" data-a="openSettings" aria-label="Ajustes e versões">${ic('gear')}</button></div>`;
+  if(!BIB.list.length)h+=`<div class="notice"><p>${BIB.ok?'Nenhuma Bíblia importada neste celular. Importe os arquivos -lampada.json do Google Drive.':`Este navegador não permitiu guardar as Bíblias (${esc(BIB.err)}).`}</p>${BIB.ok?'<button class="lnk" data-a="importBib">Importar</button>':''}</div>`;
   for(const [a,b,n] of GRP){h+=`<div class="grp"><h4>${n}</h4>`;for(let x=a;x<b;x++)h+=`<button class="listrow" data-a="openBook" data-b="${x}"><span>${BK[x][0]}</span><small>${nC(x)} ${pl(nC(x),'capítulo','capítulos')}</small>${ic('chev','sm')}</button>`;h+=`</div>`;}
   return h+`</div>`;
 }
@@ -724,13 +859,13 @@ function vNotas(){
   let items=[];
   if(NV.tab==='dest'){
     h+=`<div class="chips"><button class="chip" data-a="nvColor" data-i="" aria-pressed="${NV.color===null}">Todas</button>${HL.map((x,i)=>`<button class="chip" data-a="nvColor" data-i="${i}" aria-pressed="${NV.color===i}"><i class="dot" style="background:${x[1]};display:inline-block;margin-right:6px"></i>${x[0]}</button>`).join('')}</div>`;
-    items=hlGroups().filter(g=>NV.color===null||g.col===NV.color).map(g=>({b:g.b,c:g.c,v1:g.v1,v2:g.v2,date:g.at,sq:HL[g.col][1],title:`${refStr(g.b,g.c,g.v1,g.v2)}`,sub:HL[g.col][0],text:vtext(g.b,g.c,g.v1,S.settings.version)}));
+    items=hlGroups().filter(g=>NV.color===null||g.col===NV.color).map(g=>({b:g.b,c:g.c,v1:g.v1,v2:g.v2,date:g.at,sq:HL[g.col][1],title:`${refStr(g.b,g.c,g.v1,g.v2)}`,sub:HL[g.col][0],text:vtext(g.b,g.c,g.v1,okVer(S.settings.version))}));
   } else if(NV.tab==='notas'){
     items=S.notes.map(n=>({b:n.b,c:n.c,v1:n.v1,v2:n.v2,date:n.edited,sq:'var(--tinta-2)',title:refStr(n.b,n.c,n.v1,n.v2),sub:n.tags.map(t=>'#'+t).join(' '),text:n.text}));
   } else {
     h+=`<div class="chips"><button class="chip" data-a="nvCol" data-c="" aria-pressed="${NV.col===null}">Todas</button>${S.cols.map(c=>`<button class="chip" data-a="nvCol" data-c="${esc(c)}" aria-pressed="${NV.col===c}">${esc(c)}</button>`).join('')}</div>`;
     const by=new Map();for(const m of S.marks){if(NV.col!==null&&m.col!==NV.col)continue;const k=`${m.b}.${m.c}.${m.v}`;if(!by.has(k))by.set(k,{b:m.b,c:m.c,v1:m.v,v2:m.v,date:m.at,cols:[]});by.get(k).cols.push(m.col);}
-    items=[...by.values()].map(x=>({...x,sq:'var(--chama)',title:refStr(x.b,x.c,x.v1,x.v2),sub:x.cols.join(', '),text:vtext(x.b,x.c,x.v1,S.settings.version)}));
+    items=[...by.values()].map(x=>({...x,sq:'var(--chama)',title:refStr(x.b,x.c,x.v1,x.v2),sub:x.cols.join(', '),text:vtext(x.b,x.c,x.v1,okVer(S.settings.version))}));
   }
   if(q)items=items.filter(x=>(x.title+' '+x.text+' '+x.sub).toLowerCase().includes(q));
   items.sort(NV.sort==='recentes'?(a,b)=>a.date<b.date?1:a.date>b.date?-1:0:(a,b)=>a.b-b.b||a.c-b.c||a.v1-b.v1);
@@ -757,7 +892,7 @@ function planStats(p){
 }
 function fmtDur(s){const m=Math.round(s/60);return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;}
 function vProgresso(){
-  if(!S.plans.length)return `<div class="pad"><h1 class="screen-title">Progresso</h1><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button></div>`;
+  if(!S.plans.length)return `<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button></div>`;
   const p=plan(R.pid)||S.plans[0];const s=planStats(p),pc=s.pc,st=CC.streak;
   let h=`<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div>`;
   if(S.plans.length>1)h+=`<div class="chips">${S.plans.map(q=>`<button class="chip" data-a="progPlan" data-p="${q.id}" aria-pressed="${q.id===p.id}"><i class="dot" style="background:${PCOL[q.color]};display:inline-block;margin-right:6px"></i>${esc(q.name)}</button>`).join('')}</div>`;
@@ -815,13 +950,22 @@ function booksGrid(){const cell=b=>{const x=CC.book[b];const f=x.n/x.t;return `<
 /* ---------- Ajustes e imagens ---------- */
 function vAjustes(){
   const s=S.settings;
-  return `<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Ajustes</h1></div><div class="pad">
-  <div class="field"><span class="lbl">Versão padrão</span><button class="opt" data-a="pickVer" data-scope="padrao"><strong>${s.version}</strong><span>${VERS.find(v=>v[0]===s.version)[1]}</span></button></div>
-  <div class="field"><label for="rem">Lembrete diário</label><input class="inp" id="rem" type="time" data-in="reminder" value="${s.reminder}"><span class="sub">Uma notificação por dia, só se a leitura ainda não foi feita. No protótipo, nenhuma notificação é enviada.</span></div>
+  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Ajustes</h1></div><div class="pad">`;
+  h+=`<h2 class="sec-h">Versões da Bíblia</h2>`;
+  if(!BIB.ok)h+=`<div class="notice"><p>Este navegador não permitiu guardar as Bíblias (${esc(BIB.err)}). Abra o app instalado na tela inicial, fora do modo anônimo.</p></div>`;
+  if(!BIB.list.length)h+=`<div class="empty">Nenhuma versão importada neste celular.</div>`;
+  else h+=`<div>${BIB.list.map(sig=>{const m=BIB.meta[sig];return `<button class="vrow" data-a="verInfo" data-v="${esc(sig)}"><span class="sg">${esc(sig)}</span><span class="vn">${esc(m.nome)}<small>${fmtN(m.versiculos)} versículos, importada em ${fmtS(m.importadoEm)}${okVer(s.version)===sig?'. Versão padrão':''}</small></span>${ic('chev','sm')}</button>`;}).join('')}</div>`;
+  h+=`<button class="btn-chama" data-a="importBib" ${IMPORTING||!BIB.ok?'disabled':''}>${IMPORTING?'Importando…':'Importar Bíblia'}</button><p class="sub">Escolha no Google Drive os arquivos terminados em -lampada.json; dá para escolher vários de uma vez. Importar de novo uma versão que já está aqui substitui a anterior. Notas e destaques não são afetados.</p>`;
+  h+=`<h2 class="sec-h">Leitura</h2><div>
+  <div class="switch"><div><strong>Títulos das seções</strong><p class="sub">Mostra entre os versículos os títulos que a versão traz.</p></div><button class="tg" role="switch" aria-checked="${s.titles!==false}" data-a="toggleTitles" aria-label="Títulos das seções"></button></div>
+  <div class="switch"><div><strong>Leitura tranquila</strong><p class="sub">Esconde pontos, níveis e celebrações. Progresso e sequência continuam.</p></div><button class="tg" role="switch" aria-checked="${s.calm}" data-a="toggleCalm" aria-label="Leitura tranquila"></button></div></div>
   <div class="field"><span class="lbl">Tema do app</span><div class="seg">${[['claro','Claro'],['escuro','Escuro']].map(([k,l])=>`<button data-a="setTheme" data-t="${k}" aria-pressed="${s.theme===k}">${l}</button>`).join('')}</div></div>
-  <div class="switch"><div><strong>Leitura tranquila</strong><p class="sub">Esconde pontos, níveis e celebrações. Progresso e sequência continuam.</p></div><button class="tg" role="switch" aria-checked="${s.calm}" data-a="toggleCalm" aria-label="Leitura tranquila"></button></div>
-  <div class="notice"><p>Este protótipo usa texto bíblico de exemplo e guarda tudo só neste navegador. Reiniciar volta aos dados de demonstração.</p></div>
-  <button class="btn-sec" data-a="reset">Reiniciar demonstração</button></div>`;
+  <div class="field"><label for="rem">Horário de leitura</label><input class="inp" id="rem" type="time" data-in="reminder" value="${s.reminder}"><span class="sub">Por enquanto o app não envia notificações; o horário fica guardado para quando houver lembretes.</span></div>`;
+  h+=`<h2 class="sec-h">Backup</h2><p class="sub">${s.lastBackup?`Último backup: ${fmtL(s.lastBackup)}.`:'Nenhum backup feito ainda.'} O backup guarda planos, leituras, notas, destaques, marcadores e imagens. O texto das Bíblias não vai junto: se precisar, importe de novo os arquivos do Drive.</p>
+  <div class="row" style="flex-wrap:wrap"><button class="btn-chama" data-a="backupNow">Fazer backup</button><button class="btn-sec" data-a="restoreBak">Restaurar backup</button></div>`;
+  h+=`<h2 class="sec-h">Armazenamento</h2><p class="sub">${STO.persisted===true?'Os dados estão protegidos: o celular não apaga sozinho.':STO.persisted===false?'O navegador pode apagar os dados se o celular ficar sem espaço. Com o app instalado na tela inicial isso é raro; mantenha o backup em dia.':'Não foi possível verificar a proteção dos dados.'}${STO.usage!=null?` Em uso: ${fmtMB(STO.usage)}.`:''}</p>`;
+  h+=`<button class="btn-sec danger" data-a="eraseAll">Apagar meus dados</button><p class="sub">Lâmpada, versão pessoal ${APPV}.</p></div>`;
+  return h;
 }
 function vImagens(){
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Minhas imagens</h1></div><div class="pad">`;
@@ -830,7 +974,7 @@ function vImagens(){
 }
 
 /* ---------- Assistente de plano ---------- */
-function newWizard(){return {step:1,tab:'modelos',model:null,sel:new Map(),order:[],ordering:'biblica',open:null,paste:'',pasteMsg:'',dur:{t:'prazo',n:30,u:'dias',rn:3,ru:'cap'},wk:[1,1,1,1,1,1,1],start:TODAY,rests:[],name:'',nameEdited:false,version:S.settings.version,color:S.plans.length%4,reminder:S.settings.reminder};}
+function newWizard(){return {step:1,tab:'modelos',model:null,sel:new Map(),order:[],ordering:'biblica',open:null,paste:'',pasteMsg:'',dur:{t:'prazo',n:30,u:'dias',rn:3,ru:'cap'},wk:[1,1,1,1,1,1,1],start:TODAY,rests:[],name:'',nameEdited:false,version:okVer(S.settings.version),color:S.plans.length%4,reminder:S.settings.reminder};}
 function wSelect(b,chs){if(!W.sel.has(b)){W.sel.set(b,{chs:new Set(),rng:new Map()});W.order.push(b);}const e=W.sel.get(b);for(const c of chs)e.chs.add(c);}
 function wUnits(){
   const books=W.ordering==='escolha'?W.order.filter(b=>W.sel.has(b)):[...W.sel.keys()].sort((a,b)=>a-b);const us=[];
@@ -853,7 +997,7 @@ function vWizard(){
     h+=`<div class="pad"><div class="seg">${[['modelos','Modelos'],['livros','Escolher livros'],['colar','Colar referências']].map(([k,l])=>`<button data-a="wTab" data-t="${k}" aria-pressed="${W.tab===k}">${l}</button>`).join('')}</div>`;
     if(W.tab==='modelos'){
       h+=MODELS.map(m=>{const u=unitsFromBooks(rangeA(m.books[0],m.books[1]));const s=wSummary(u);const mpd=Math.round(s.V/m.dur.n*SECS_PER_V/60);return `<button class="model" data-a="wModel" data-m="${m.id}" aria-pressed="${W.model===m.id}"><strong>${m.name}</strong><span>${m.desc}. ${fmtN(s.chs)} capítulos, cerca de ${mpd} min por dia.</span></button>`;}).join('');
-      h+=`<p class="sub">Modelos com trilhas paralelas, como AT e NT no mesmo dia, ficam para a versão completa.</p>`;
+      h+=`<p class="sub">Modelos com trilhas paralelas, como AT e NT no mesmo dia, ainda não estão disponíveis.</p>`;
     } else if(W.tab==='livros'){
       h+=`<div class="chips"><button class="chip" data-a="wAll" data-r="0-66">Bíblia toda</button><button class="chip" data-a="wAll" data-r="0-39">Antigo Testamento</button><button class="chip" data-a="wAll" data-r="39-66">Novo Testamento</button><button class="chip" data-a="wClear">Limpar</button></div>`;
       if(W.sel.size>1)h+=`<div class="field"><span class="lbl">Ordem de leitura</span><div class="seg">${[['biblica','Ordem bíblica'],['escolha','Na ordem em que escolhi']].map(([k,l])=>`<button data-a="wOrder" data-o="${k}" aria-pressed="${W.ordering===k}">${l}</button>`).join('')}</div></div>`;
@@ -895,7 +1039,7 @@ function vWizard(){
   else {
     if(!W.nameEdited)W.name=wName(us);
     h+=`<div class="pad"><div class="field"><label for="w-name">Nome do plano</label><input class="inp" id="w-name" data-in="wname" value="${esc(W.name)}"></div>
-    <div class="field"><span class="lbl">Versão padrão do plano</span><div class="chips">${VERS.map(v=>`<button class="chip" data-a="wVer" data-v="${v[0]}" aria-pressed="${W.version===v[0]}">${v[0]}</button>`).join('')}</div><span class="sub">${VERS.find(v=>v[0]===W.version)[1]}. ${VERS.find(v=>v[0]===W.version)[2]}.</span></div>
+    <div class="field"><span class="lbl">Versão padrão do plano</span>${BIB.list.length?`<div class="chips">${BIB.list.map(sig=>`<button class="chip" data-a="wVer" data-v="${esc(sig)}" aria-pressed="${W.version===sig}">${esc(sig)}</button>`).join('')}</div><span class="sub">${esc(verName(W.version))}${verDesc(W.version)?'. '+esc(verDesc(W.version))+'.':''} Na leitura dá para trocar a qualquer momento.</span>`:`<span class="sub">Nenhuma versão importada ainda. Dá para criar o plano agora e importar a Bíblia depois em Ajustes.</span>`}</div>
     <div class="field"><label for="w-rem">Lembrete</label><input class="inp" id="w-rem" type="time" data-in="wrem" value="${W.reminder}"></div>
     <div class="field"><span class="lbl">Cor do plano</span><div class="colors">${PCOL.map((c,i)=>`<button class="cc" data-a="wColor" data-i="${i}" style="background:${c}" aria-label="Cor ${i+1}" aria-pressed="${W.color===i}"></button>`).join('')}</div></div></div>
     <div class="sumbar"><div class="sb"><b>${esc(W.name)}</b></div><button class="btn-chama" data-a="wCreate">Criar plano</button></div>`;
@@ -967,7 +1111,7 @@ function drawVerse(cv,o){
 }
 function edState(){return R.ed;}
 function vEditor(){
-  const e=R.ed;const ref=refStr(e.b,e.c,e.v1,e.v2);
+  const e=R.ed;const ref=verRef(e.ver,e.b,e.c,e.v1,e.v2);
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Imagem do versículo</h1></div><div class="ed-prev"><canvas id="ed-cv" aria-label="Prévia da imagem"></canvas></div><div class="pad">`;
   h+=`<div class="versebox"><small>Versículo</small><q>${esc(ref)} (${e.ver})</q>${e.choices&&e.choices.length>1?`<button class="lnk" data-a="edPick" style="text-align:left">Trocar versículo</button>`:''}<span class="warnline" id="ed-warn"></span></div>`;
   h+=`<div class="field"><span class="lbl">Formato</span><div class="seg">${Object.entries(FMT).map(([k,v])=>`<button data-a="edSet" data-k="fmt" data-v="${k}" aria-pressed="${e.fmt===k}">${v[2]}</button>`).join('')}</div></div>`;
@@ -977,8 +1121,8 @@ function vEditor(){
   h+=`<div><div class="switch"><span>Mostrar “${esc(e.dayLabel||'Dia do plano')}”</span><button class="tg" role="switch" data-a="edToggle" data-k="showDay" aria-checked="${!!e.showDay}" ${e.dayLabel?'':'disabled'} aria-label="Mostrar dia do plano"></button></div><div class="switch"><span>Marca discreta do app</span><button class="tg" role="switch" data-a="edToggle" data-k="showMark" aria-checked="${!!e.showMark}" aria-label="Marca do app"></button></div></div>`;
   return h+`</div><div class="sticky-foot"><button class="btn-sec" data-a="edCopy">${ic('copy','sm')} Copiar texto</button><button class="btn-chama" style="flex:1" data-a="edMake">Gerar imagem</button></div>`;
 }
-function edOpts(e){return {fmt:e.fmt,tpl:e.tpl,font:e.font,color:e.color,text:vtextRange(e.b,e.c,e.v1,e.v2,e.ver),ref:`${refStr(e.b,e.c,e.v1,e.v2)} (${e.ver})`,showDay:e.showDay,dayLabel:e.dayLabel,showMark:e.showMark};}
-function vtextRange(b,c,v1,v2,ver){if(v1===v2)return `Texto de exemplo de ${BK[b][0]} ${c}:${v1}, ${ver}. Aqui entra o versículo licenciado.`;return `Texto de exemplo de ${BK[b][0]} ${c}:${v1}–${v2}, ${ver}. Aqui entram os versículos licenciados.`;}
+function edOpts(e){return {fmt:e.fmt,tpl:e.tpl,font:e.font,color:e.color,text:vtextRange(e.b,e.c,e.v1,e.v2,e.ver),ref:`${verRef(e.ver,e.b,e.c,e.v1,e.v2)}${e.ver?` (${e.ver})`:''}`,showDay:e.showDay,dayLabel:e.dayLabel,showMark:e.showMark};}
+function vtextRange(b,c,v1,v2,ver){if(!hasVer(ver))return 'Importe uma Bíblia para ver o texto.';const t=textOf(ver,b,c,v1,v2);return t===null?'Carregando…':(t||'Este trecho não consta nesta versão.');}
 function drawEditor(){
   FONTS_READY.then(()=>{const cv=$('#ed-cv');if(!cv||R.v!=='editor')return;const e=R.ed;const res=drawVerse(cv,edOpts(e));
     const wn=$('#ed-warn');if(wn)wn.textContent=res.tooLong?'Texto longo demais para este formato. Selecione menos versículos.':res.fixed?'A cor escolhida teria pouco contraste com este fundo; ajustamos para manter a leitura.':'';
@@ -987,7 +1131,7 @@ function drawEditor(){
 }
 function openEditor(o){
   const tpl=o.tpl||'aurora';
-  go({v:'editor',tab:R.tab,ed:{b:o.b,c:o.c,v1:o.v1,v2:o.v2,ver:o.ver||S.settings.version,fmt:o.fmt||'story',tpl,font:o.font||'serif',color:o.color||TPL.find(t=>t.id===tpl).def,dayLabel:o.dayLabel||null,showDay:!!o.dayLabel,showMark:o.showMark!==false,choices:o.choices||null}});
+  go({v:'editor',tab:R.tab,ed:{b:o.b,c:o.c,v1:o.v1,v2:o.v2,ver:okVer(o.ver,S.settings.version),fmt:o.fmt||'story',tpl,font:o.font||'serif',color:o.color||TPL.find(t=>t.id===tpl).def,dayLabel:o.dayLabel||null,showDay:!!o.dayLabel,showMark:o.showMark!==false,choices:o.choices||null}});
 }
 
 /* ---------- Cartão de progresso ---------- */
@@ -1073,25 +1217,42 @@ function renderLayer(){
     inner+=`<button class="btn-sec" data-a="closeSheet">Deixar como está</button>`;
   }
   else if(s.t==='ver'){
-    const cur=s.scope==='padrao'?S.settings.version:readerVer();
-    inner=`<h2>Versão da Bíblia</h2>${s.scope==='padrao'?'<p class="sub">Usada em novos planos e na leitura livre.</p>':'<p class="sub">Troca só nesta leitura. A versão padrão do plano continua a mesma.</p>'}`+VERS.map(v=>`<button class="opt" data-a="setVer" data-v="${v[0]}" aria-pressed="${cur===v[0]}"><strong>${v[0]}, ${v[1]}</strong><span>${v[2]}</span></button>`).join('')+`<p class="sub">Todas as versões ficam disponíveis sem internet depois de baixadas. No protótipo o texto é de exemplo.</p>`;
+    const cur=s.scope==='padrao'?okVer(S.settings.version):readerVer();
+    inner=`<h2>Versão da Bíblia</h2>${s.scope==='padrao'?'<p class="sub">Usada em novos planos e na leitura livre.</p>':'<p class="sub">Troca só nesta leitura. A versão padrão do plano continua a mesma.</p>'}`+(BIB.list.length?BIB.list.map(sig=>`<button class="opt" data-a="setVer" data-v="${esc(sig)}" aria-pressed="${cur===sig}"><strong>${esc(sig)}, ${esc(verName(sig))}</strong>${verDesc(sig)?`<span>${esc(verDesc(sig))}</span>`:''}</button>`).join(''):`<div class="empty">Nenhuma versão importada neste celular.</div>`)+`<button class="btn-sec" data-a="goVersions">Importar ou gerenciar versões</button>`;
   }
   else if(s.t==='aa'){
     inner=`<h2>Aparência do texto</h2><div class="field"><span class="lbl">Tamanho da letra</span><div class="row"><button class="btn-sec" data-a="font" data-d="-1" aria-label="Diminuir letra">A−</button><span class="num" style="flex:1;text-align:center">${S.settings.font} px</span><button class="btn-sec" data-a="font" data-d="1" aria-label="Aumentar letra">A+</button></div></div><div class="field"><span class="lbl">Fundo</span><div class="seg">${[['claro','Claro'],['sepia','Sépia'],['escuro','Escuro']].map(([k,l])=>`<button data-a="readerTheme" data-t="${k}" aria-pressed="${S.settings.reader===k}">${l}</button>`).join('')}</div></div>`;
   }
   else if(s.t==='nota'){
     const n=s.id?S.notes.find(x=>x.id===s.id):null;
-    inner=`<h2>${n?'Editar nota':'Nova nota'}</h2><p class="sub">${esc(refStr(s.b,s.c,s.v1,s.v2))}</p><textarea class="inp" id="nt-text" placeholder="O que este trecho diz para você?">${esc(n?n.text:'')}</textarea><input class="inp" id="nt-tags" placeholder="Etiquetas, separadas por vírgula (opcional)" value="${esc(n?n.tags.join(', '):'')}" aria-label="Etiquetas"><div class="row"><button class="btn-chama" style="flex:1" data-a="saveNote">Salvar nota</button>${n?`<button class="btn-sec" data-a="delNote">Apagar</button>`:''}</div>`;
+    inner=`<h2>${n?'Editar nota':'Nova nota'}</h2><p class="sub">${esc(verRef(readerVer(),s.b,s.c,s.v1,s.v2))}</p><textarea class="inp" id="nt-text" placeholder="O que este trecho diz para você?">${esc(n?n.text:'')}</textarea><input class="inp" id="nt-tags" placeholder="Etiquetas, separadas por vírgula (opcional)" value="${esc(n?n.tags.join(', '):'')}" aria-label="Etiquetas"><div class="row"><button class="btn-chama" style="flex:1" data-a="saveNote">Salvar nota</button>${n?`<button class="btn-sec" data-a="delNote">Apagar</button>`:''}</div>`;
   }
   else if(s.t==='marc'){
-    const k=s.k;inner=`<h2>Marcar para depois</h2><p class="sub">${esc(refStr(s.b,s.c,s.v1,s.v2))}</p>`+S.cols.map(c=>{const on=S.marks.some(m=>m.b===s.b&&m.c===s.c&&m.v===s.v1&&m.col===c);return `<div class="switch"><span>${esc(c)}</span><button class="tg" role="switch" data-a="toggleCol" data-c="${esc(c)}" aria-checked="${on}" aria-label="${esc(c)}"></button></div>`;}).join('')+`<div class="row"><input class="inp" id="newcol" placeholder="Nova coleção" aria-label="Nome da nova coleção"><button class="btn-sec" data-a="addCol">Criar</button></div><button class="btn-chama" data-a="closeSheet">Pronto</button>`;
+    const k=s.k;inner=`<h2>Marcar para depois</h2><p class="sub">${esc(verRef(readerVer(),s.b,s.c,s.v1,s.v2))}</p>`+S.cols.map(c=>{const on=S.marks.some(m=>m.b===s.b&&m.c===s.c&&m.v===s.v1&&m.col===c);return `<div class="switch"><span>${esc(c)}</span><button class="tg" role="switch" data-a="toggleCol" data-c="${esc(c)}" aria-checked="${on}" aria-label="${esc(c)}"></button></div>`;}).join('')+`<div class="row"><input class="inp" id="newcol" placeholder="Nova coleção" aria-label="Nome da nova coleção"><button class="btn-sec" data-a="addCol">Criar</button></div><button class="btn-chama" data-a="closeSheet">Pronto</button>`;
   }
   else if(s.t==='comp'){
-    inner=`<h2>Comparar versões</h2><p class="sub">${esc(refStr(s.b,s.c,s.v))}</p>`+VERS.map(v=>`<div class="versebox"><small>${v[0]}, ${v[1]}</small><q>${esc(vtext(s.b,s.c,s.v,v[0]))}</q></div>`).join('');
+    inner=`<h2>Comparar versões</h2><p class="sub">${esc(refStr(s.b,s.c,s.v))}</p>`;
+    if(!BIB.list.length)inner+=`<div class="empty">Importe versões em Ajustes para comparar.</div>`;
+    inner+=BIB.list.map(sig=>{const vs=verses(sig,s.b,s.c,s.v,s.v);let t,lab='';
+      if(vs===null)t='Carregando…';else{t=vs.map(x=>x.txt.trim()).filter(Boolean).join(' ')||'Este versículo não consta nesta versão.';const labs=vs.map(x=>x.lab).join(', ');if(labs&&labs!==String(s.v))lab=`, versículo ${labs} nesta versão`;}
+      return `<div class="versebox"><small>${esc(sig)}, ${esc(verName(sig))}${lab}</small><q>${esc(t)}</q></div>`;}).join('');
+  }
+  else if(s.t==='imp'){
+    inner=`<h2>Importação</h2>`+s.res.map(([n,ok,msg])=>`<div class="res ${ok?'ok':'er'}">${ic(ok?'check':'close','sm')}<div><b>${esc(msg)}</b><p class="sub">${esc(n)}</p></div></div>`).join('')+`<button class="btn-chama" data-a="closeSheet">Pronto</button>`;
+  }
+  else if(s.t==='sobre'){
+    const m=BIB.meta[s.v];
+    if(!m)inner=`<h2>Versão removida</h2>`;
+    else inner=`<h2>${esc(m.sigla)}, ${esc(m.nome)}</h2><div class="versebox"><small>Crédito</small><p style="font-size:14.5px;line-height:1.5">${esc(m.credito||'O arquivo não traz crédito.')}</p></div>
+      <p class="sub">${fmtN(m.versiculos)} versículos em ${m.livros} ${pl(m.livros,'livro','livros')}${m.vazios?`; ${fmtN(m.vazios)} ${pl(m.vazios,'posição sem texto','posições sem texto')} (versículos ausentes nesta versão ou unidos a outros)`:''}${m.correcoes?`; ${fmtN(m.correcoes)} ${pl(m.correcoes,'correção registrada','correções registradas')} no arquivo`:''}. Arquivo gerado em ${m.geradoEm?fmtS(m.geradoEm):'data desconhecida'}, importado em ${fmtS(m.importadoEm)}.</p>${m.fonte?`<p class="sub">Fonte: ${esc(m.fonte)}</p>`:''}
+      <div class="row" style="flex-wrap:wrap">${okVer(S.settings.version)===m.sigla?`<span class="tag-ok">${ic('check','sm')} Versão padrão</span>`:`<button class="btn-chama" data-a="setDefault" data-v="${esc(m.sigla)}">Usar como padrão</button>`}<button class="btn-sec danger" data-a="delVer" data-v="${esc(m.sigla)}">Remover do celular</button></div>`;
+  }
+  else if(s.t==='conf'){
+    inner=`<h2>${esc(s.title)}</h2><p class="sub">${esc(s.text)}</p><div class="row"><button class="btn-sec" style="flex:1" data-a="closeSheet">Cancelar</button><button class="btn-chama${s.danger?' danger-fill':''}" style="flex:1" data-a="confOk">${esc(s.ok)}</button></div>`;
   }
   else if(s.t==='copy'){inner=`<h2>Copiar texto</h2><p class="sub">Selecione o texto abaixo e copie.</p><textarea class="inp" readonly id="copybox">${esc(s.text)}</textarea>`;}
   else if(s.t==='out'){
-    inner=`<h2>${s.kind==='prog'?'Cartão de progresso pronto':'Imagem pronta'}</h2><img class="outimg" src="${s.url}" alt="${esc(s.alt)}"><p class="sub">No app, Compartilhar abre a folha do celular com WhatsApp, Stories e outros. Neste protótipo, toque e segure a imagem para salvar ou compartilhar.</p><div class="row"><button class="btn-sec" style="flex:1" data-a="${s.kind==='prog'?'pcCopy':'edCopy'}">${ic('copy','sm')} ${s.kind==='prog'?'Copiar resumo':'Copiar texto'}</button><button class="btn-chama" style="flex:1" data-a="closeSheet">Concluir</button></div>`;
+    inner=`<h2>${s.kind==='prog'?'Cartão de progresso pronto':'Imagem pronta'}</h2><img class="outimg" src="${s.url}" alt="${esc(s.alt)}"><div class="row"><button class="btn-chama" style="flex:1" data-a="outShare">${ic('share','sm')} Compartilhar</button><button class="btn-sec" style="flex:1" data-a="outSave">Salvar imagem</button></div><p class="sub">Compartilhar abre a lista do celular, com WhatsApp, Instagram e outros. Se não abrir, toque e segure a imagem.</p><div class="row"><button class="btn-sec" style="flex:1" data-a="${s.kind==='prog'?'pcCopy':'edCopy'}">${ic('copy','sm')} ${s.kind==='prog'?'Copiar resumo':'Copiar texto'}</button><button class="btn-sec" style="flex:1" data-a="closeSheet">Concluir</button></div>`;
   }
   else if(s.t==='pick'){
     inner=`<h2>Escolher versículo</h2><p class="sub">Versículos lidos hoje.</p>`+s.list.map(([b,c,v])=>`<button class="opt" data-a="edPicked" data-b="${b}" data-c="${c}" data-v="${v}"><strong>${esc(refStr(b,c,v))}</strong><span>${esc(vtext(b,c,v,R.ed.ver))}</span></button>`).join('');
@@ -1105,7 +1266,7 @@ function suggestVerse(p,d){
   if(hlToday.length)return {k:hlToday[hlToday.length-1],why:'O versículo que você destacou hoje'};
   const nt=S.notes.filter(n=>n.created===TODAY&&keys.some(([b,c,v])=>b===n.b&&c===n.c&&v>=n.v1&&v<=n.v2));
   if(nt.length){const n=nt[nt.length-1];return {k:[n.b,n.c,n.v1],why:'Onde você escreveu uma nota hoje'};}
-  const u=d.units[0];let kv=keyVerse(u.b,u.c);if(kv<u.v1||kv>u.v2)kv=u.v1;return {k:[u.b,u.c,kv],why:'Versículo-chave do capítulo, da lista curada'};
+  const u=d.units[0];let kv=keyVerse(u.b,u.c);if(kv<u.v1||kv>u.v2)kv=u.v1;return {k:[u.b,u.c,kv],why:KEYV[u.b+'.'+u.c]===kv?'Versículo-chave do capítulo':'Um versículo da leitura de hoje'};
 }
 function fechHTML(s){
   const p=plan(s.pid),d=p.days.find(x=>x.id===s.did),di=p.days.indexOf(d);const st=CC.streak;const P=CC.points.today;const calm=S.settings.calm;
@@ -1118,7 +1279,8 @@ function fechHTML(s){
     h+=`<div class="versebox"><small>Pontos de hoje</small><div class="ptlist">${rows.map(([l,n])=>`<div><span>${l}</span><span class="num">+${n}</span></div>`).join('')}${P.sum>50?`<div><span class="sub">Teto diário de 50 pontos</span><span class="num sub">−${P.sum-50}</span></div>`:''}${CC.points.todayExtras.map(e=>`<div><span>${esc(e.l)}</span><span class="num">+${e.n}</span></div>`).join('')}<div class="tot"><span>Total de hoje</span><span class="num">+${P.t+CC.points.todayExtras.reduce((x,e)=>x+e.n,0)}</span></div></div><small>Nível ${CC.level.name}, ${fmtN(CC.points.total)} pontos</small></div>`;}
   const hasRef=S.notes.some(n=>n.created===TODAY&&n.reflexao&&n.day===d.id);
   h+=`<div class="field"><label for="refl">O que ficou para você hoje?</label><textarea class="inp" id="refl" placeholder="Opcional. Vira uma nota presa ao trecho lido.">${esc(s.refl||'')}</textarea><button class="btn-sec" data-a="saveRefl" ${hasRef?'disabled':''}>${hasRef?'Reflexão salva':'Salvar reflexão'}</button></div>`;
-  h+=`<div class="versebox"><small>${sug.why}</small><q>${esc(vtext(b,c,v,p.version))}</q><small>${esc(refStr(b,c,v))} (${p.version})</small><button class="btn-chama" data-a="fechImg" data-b="${b}" data-c="${c}" data-v="${v}">${ic('img','sm')} Criar imagem do dia</button></div>`;
+  const fv=okVer(p.version,S.settings.version);
+  h+=`<div class="versebox"><small>${sug.why}</small><q>${esc(vtext(b,c,v,fv))}</q><small>${esc(verRef(fv,b,c,v))}${fv?` (${esc(fv)})`:''}</small><button class="btn-chama" data-a="fechImg" data-b="${b}" data-c="${c}" data-v="${v}">${ic('img','sm')} Criar imagem do dia</button></div>`;
   if(ms.length||bk.length)h+=`<div class="badge-new"><span class="medal"><svg viewBox="0 0 24 24">${ICP.share}</svg></span><div><b>${ms.length?`Você chegou a ${ms[ms.length-1]}% do plano`:`${BK[bk[0]][0]} concluído`}</b><p class="sub">Um bom momento para compartilhar o progresso.</p><button class="lnk" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button></div></div>`;
   h+=`<button class="btn-sec wide" data-a="closeFech">Voltar para Hoje</button></div></div>`;
   return h;
@@ -1157,11 +1319,11 @@ const A={
   toggleCol:(d)=>{const s=SHEET;const vs=[...SEL].map(k=>k.split('.').map(Number));const list=vs.length?vs:[[s.b,s.c,s.v1]];const on=S.marks.some(m=>m.b===list[0][0]&&m.c===list[0][1]&&m.v===list[0][2]&&m.col===d.c);
     for(const [b,c,v] of list){S.marks=S.marks.filter(m=>!(m.b===b&&m.c===c&&m.v===v&&m.col===d.c));if(!on)S.marks.push({id:uid(),b,c,v,col:d.c,at:TODAY});}CC=compute();save();renderLayer();},
   addCol:()=>{const v=$('#newcol').value.trim();if(!v)return;if(!S.cols.includes(v))S.cols.push(v);save();renderLayer();},
-  copySel:()=>{const l=selList();const ver=readerVer();const r=selRange();copyText(`${refStr(r.b,r.c,r.v1,r.v2)} (${ver})\n`+l.map(([b,c,v])=>vtext(b,c,v,ver)).join(' '));SEL.clear();render();},
+  copySel:()=>{const l=selList();const ver=readerVer();const r=selRange();const ts=[];for(const [b,c,v] of l){const t=vtext(b,c,v,ver);if(ts[ts.length-1]!==t)ts.push(t);}copyText(`${verRef(ver,r.b,r.c,r.v1,r.v2)}${ver?` (${ver})`:''}\n`+ts.join(' '));SEL.clear();render();},
   imgSel:()=>{const r=selRange();const ver=readerVer();const dl=R.pid&&!R.free?(()=>{const p=plan(R.pid);const i=p.days.findIndex(x=>x.id===R.did);return `Dia ${i+1} do meu plano`;})():null;openEditor({...r,v2:Math.min(r.v2,r.v1+2),ver,dayLabel:dl});},
   compSel:()=>{const [b,c,v]=selList()[0];sheet({t:'comp',b,c,v});},
   pickVer:(d)=>sheet({t:'ver',scope:d.scope||(R.v==='reader'?'leitura':'padrao')}),
-  setVer:(d)=>{if(SHEET.scope==='padrao')S.settings.version=d.v;else R.ver=d.v;SHEET=null;render();toast(`Versão ${d.v}`);},
+  setVer:(d)=>{if(SHEET.scope==='padrao')S.settings.version=d.v;else R.ver=d.v;SHEET=null;SCROLL_KEEP=true;render();toast(`Versão ${d.v}`);},
   aa:()=>sheet({t:'aa'}),
   font:(d)=>{S.settings.font=Math.min(26,Math.max(15,S.settings.font+(+d.d)));render();},
   readerTheme:(d)=>{S.settings.reader=d.t;render();},
@@ -1179,10 +1341,10 @@ const A={
   edPicked:(d)=>{Object.assign(R.ed,{b:+d.b,c:+d.c,v1:+d.v,v2:+d.v});SHEET=null;render();},
   edSet:(d)=>{R.ed[d.k]=d.v;if(d.k==='tpl'){const t=TPL.find(x=>x.id===d.v);if(t&&contrast(R.ed.color,t.rep)<4.5)R.ed.color=t.def;if(d.v==='foto')R.ed.color='#FFFFFF';}render();},
   edToggle:(d)=>{R.ed[d.k]=!R.ed[d.k];render();},
-  edCopy:()=>{const e=R.ed;copyText(`${refStr(e.b,e.c,e.v1,e.v2)} (${e.ver})\n${vtextRange(e.b,e.c,e.v1,e.v2,e.ver)}`);},
+  edCopy:()=>{const e=R.ed;copyText(`${verRef(e.ver,e.b,e.c,e.v1,e.v2)}${e.ver?` (${e.ver})`:''}\n${vtextRange(e.b,e.c,e.v1,e.v2,e.ver)}`);},
   edMake:()=>{FONTS_READY.then(()=>{const e=R.ed;const cv=document.createElement('canvas');drawVerse(cv,edOpts(e));const url=cv.toDataURL('image/png');
     S.images.unshift({kind:'verso',b:e.b,c:e.c,v1:e.v1,v2:e.v2,ver:e.ver,fmt:e.fmt,tpl:e.tpl,font:e.font,color:e.color,showDay:e.showDay,dayLabel:e.dayLabel,showMark:e.showMark,at:TODAY});save();
-    sheet({t:'out',url,kind:'verso',alt:`Imagem com ${refStr(e.b,e.c,e.v1,e.v2)}`});});},
+    sheet({t:'out',url,kind:'verso',alt:`Imagem com ${verRef(e.ver,e.b,e.c,e.v1,e.v2)}`});});},
   shareProg:(d)=>{SHEET=null;go({v:'cartao',tab:R.tab,pc:{pid:d.p,fmt:'story',tpl:'aurora',items:{dias:true,seq:true,livros:true,caps:false,cal:false,nivel:false,conq:false,vers:false,nome:false},nome:''}});},
   pcSet:(d)=>{R.pc[d.k]=d.v;render();},
   pcToggle:(d)=>{R.pc.items[d.k]=!R.pc.items[d.k];render();},
@@ -1193,7 +1355,19 @@ const A={
   openSettings:()=>go({v:'ajustes',tab:R.tab}),
   setTheme:(d)=>{S.settings.theme=d.t;render();},
   toggleCalm:()=>{S.settings.calm=!S.settings.calm;render();toast(S.settings.calm?'Leitura tranquila ligada':'Leitura tranquila desligada');},
-  reset:()=>{try{localStorage.removeItem(KEY);}catch(e){}S=seed();HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Demonstração reiniciada');},
+  eraseAll:()=>sheet({t:'conf',title:'Apagar meus dados?',text:'Apaga planos, leituras, notas, destaques, marcadores e imagens deste celular. As Bíblias importadas continuam. Se quiser guardar, faça um backup antes.',ok:'Apagar tudo',danger:true,fn:()=>{const keep=S.settings.version;S=seed();S.settings.version=keep;HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Dados apagados');}}),
+  confOk:()=>{const f=SHEET&&SHEET.fn;SHEET=null;renderLayer();if(f)f();},
+  importBib:()=>{if(!BIB.ok){toast('Este navegador não permite guardar as Bíblias');return;}const i=$('#in-bib');i.value='';i.click();},
+  restoreBak:()=>{const i=$('#in-bak');i.value='';i.click();},
+  goVersions:()=>{SHEET=null;if(R.v==='ajustes')render();else go({v:'ajustes',tab:R.tab});},
+  verInfo:(d)=>sheet({t:'sobre',v:d.v}),
+  setDefault:(d)=>{S.settings.version=d.v;SHEET=null;render();toast(`${d.v} é a versão padrão`);},
+  delVer:(d)=>sheet({t:'conf',title:`Remover ${d.v} do celular?`,text:'O texto desta versão sai do celular. Notas, destaques e leituras continuam. Para ter a versão de volta, importe o arquivo de novo.',ok:'Remover',danger:true,fn:async()=>{try{await removeBiblia(d.v);if(!hasVer(S.settings.version))S.settings.version=okVer(...VORD);if(R.ver===d.v)R.ver=null;render();toast(`${d.v} removida`);storageInfo().then(render);}catch(e){toast('Não consegui remover: '+(e&&e.message||e));}}}),
+  toggleTitles:()=>{S.settings.titles=S.settings.titles===false;render();},
+  backupNow:()=>doBackup(),
+  snoozeBackup:()=>{S.settings.backupSnooze=addD(TODAY,7);render();},
+  outShare:async()=>{const s=SHEET;if(!s||!s.url)return;try{const blob=await (await fetch(s.url)).blob();const r=await shareOrDownload(blob,`lampada-${TODAY}.png`,'Lâmpada');if(r==='downloaded')toast('Imagem salva em Downloads');}catch(e){toast('Não consegui compartilhar. Toque e segure a imagem.');}},
+  outSave:async()=>{const s=SHEET;if(!s||!s.url)return;try{download(await (await fetch(s.url)).blob(),`lampada-${TODAY}.png`);toast('Imagem salva');}catch(e){toast('Toque e segure a imagem para salvar');}},
   progPlan:(d)=>{R.pid=d.p;SCROLL_KEEP=false;render();},
   openBook:(d)=>go({v:'livro',tab:'biblia',b:+d.b}),
   freeGo:(d)=>{const r={v:'reader',tab:R.tab,free:true,b:+d.b,c:+d.c};if(R.v==='reader'&&R.free){R=r;SEL.clear();SCROLL_KEEP=false;render();}else go(r);},
@@ -1236,7 +1410,45 @@ function catchUp(p){
 }
 function postpone(p){const pc=CC.plan[p.id];const mv=p.days.filter((d,i)=>!pc.dayDone[i]);let d=TODAY;for(const day of mv){while(!(p.wk[wd(d)]&&!p.rests.includes(d)))d=addD(d,1);day.date=d;d=addD(d,1);}p.days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);}
 
+/* ---------------- importação e backup ---------------- */
+async function onBibFiles(files){
+  if(!files||!files.length)return;
+  IMPORTING=true;render();const res=[];
+  for(const f of files){
+    try{toast(`Importando ${f.name}…`);const txt=await f.text();let d;
+      try{d=JSON.parse(txt);}catch(e){res.push([f.name,false,'Não é um arquivo JSON válido']);continue;}
+      const er=validaBiblia(d);if(er){res.push([f.name,false,er]);continue;}
+      const old=hasVer(normSig(d.sigla));const m=await importaBiblia(d);
+      res.push([f.name,true,`${m.sigla}: ${fmtN(m.versiculos)} versículos${old?', substituiu a anterior':''}`]);
+    }catch(e){res.push([f.name,false,'Erro ao guardar no celular: '+(e&&e.message||e)]);}
+  }
+  IMPORTING=false;
+  if(!hasVer(S.settings.version))S.settings.version=okVer(...VORD);
+  SHEET={t:'imp',res};render();
+  storageInfo().then(()=>{if(R.v==='ajustes')refresh();});
+}
+async function doBackup(){
+  const prev=S.settings.lastBackup;S.settings.lastBackup=TODAY;S.settings.backupSnooze=null;
+  const data={formato:'lampada-backup',formatoVersao:1,geradoEm:new Date().toISOString(),app:'Lâmpada '+APPV,versoes:BIB.list.slice(),dados:S};
+  const r=await shareOrDownload(new Blob([JSON.stringify(data)],{type:'application/json'}),`lampada-backup-${TODAY}.json`,'Backup do Lâmpada');
+  if(r==='aborted'){S.settings.lastBackup=prev;return;}
+  render();toast(r==='shared'?'Backup enviado. Confira se ele ficou no Google Drive.':'Backup salvo em Downloads. Envie o arquivo para o Google Drive.');
+}
+async function onBakFile(f){
+  if(!f)return;
+  try{const d=JSON.parse(await f.text());
+    if(d&&d.formato==='lampada-biblia'){toast('Este arquivo é uma Bíblia. Use Importar Bíblia.');return;}
+    const s=d&&d.formato==='lampada-backup'?d.dados:null;
+    if(!s||s.v!==1||!Array.isArray(s.plans)||!Array.isArray(s.reads)){toast('O arquivo não é um backup do Lâmpada.');return;}
+    const when=d.geradoEm?fmtL(dk(new Date(d.geradoEm))):'data desconhecida',nn=(s.notes||[]).length;
+    sheet({t:'conf',title:'Restaurar este backup?',text:`Backup de ${when}: ${s.plans.length} ${pl(s.plans.length,'plano','planos')}, ${s.reads.length} ${pl(s.reads.length,'leitura registrada','leituras registradas')} e ${nn} ${pl(nn,'nota','notas')}. Os dados atuais deste celular serão substituídos.`,ok:'Restaurar',
+      fn:()=>{S=fixState(s);if(!hasVer(S.settings.version))S.settings.version=okVer(...VORD);HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Backup restaurado');}});
+  }catch(e){toast('Não consegui ler o arquivo de backup.');}
+}
+
 /* ---------------- eventos ---------------- */
+$('#in-bib').addEventListener('change',e=>onBibFiles([...e.target.files]));
+$('#in-bak').addEventListener('change',e=>onBakFile(e.target.files&&e.target.files[0]));
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.disabled)return;const f=A[t.dataset.a];if(f){e.preventDefault();f(t.dataset,t,e);}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.v[data-a]')){e.preventDefault();A.tapVerse(e.target.dataset);}if(e.key==='Escape'&&SHEET&&SHEET.t!=='fech'){sheet(null);}});
 document.addEventListener('input',e=>{const t=e.target;const k=t.dataset.in;if(!k)return;
@@ -1259,16 +1471,13 @@ document.addEventListener('change',e=>{const t=e.target;const k=t.dataset.in;if(
 
 /* ---------------- início ---------------- */
 S=load();
-render();
-</script>
-<script>
-/* App instalável: guarda os arquivos no celular para funcionar sem internet. */
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-    if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
-  });
-}
+(async()=>{
+  await bibInit();
+  if(!hasVer(S.settings.version)&&BIB.list.length)S.settings.version=okVer(...VORD);
+  render();
+  await storageInfo();if(R.v==='ajustes')refresh();
+})();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});
 </script>
 </body>
 </html>

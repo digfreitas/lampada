@@ -1,60 +1,55 @@
-/* Lâmpada: guarda os arquivos do app no celular para ele abrir sem internet.
-   Ao publicar uma versão nova do app, troque o número em VERSAO (v1, v2, v3...). */
-const VERSAO = 'lampada-v1';
+/* Lâmpada: service worker.
+   Guarda os arquivos do app no celular para abrir sem internet.
+   As Bíblias não passam por aqui: ficam no banco do próprio app (IndexedDB), importadas dos arquivos do Drive.
+   A cada versão nova do app, troque o valor de VERSAO. */
+const VERSAO = 'lampada-v2';
 const ARQUIVOS = [
   './',
-  'index.html',
-  'fontes.css',
-  'manifest.webmanifest',
-  'icone-192.png',
-  'icone-512.png',
-  'apple-touch-icon.png'
+  './index.html',
+  './fontes.css',
+  './manifest.webmanifest',
+  './icone-192.png',
+  './icone-512.png',
+  './apple-touch-icon.png'
 ];
 
-self.addEventListener('install', (evento) => {
-  evento.waitUntil(
-    caches.open(VERSAO)
-      .then((cache) => cache.addAll(ARQUIVOS.map((url) => new Request(url, { cache: 'reload' }))))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', (evento) => {
-  evento.waitUntil(
-    caches.keys()
-      .then((nomes) => Promise.all(nomes.filter((n) => n !== VERSAO).map((n) => caches.delete(n))))
-      .then(() => self.clients.claim())
-  );
-});
-
-/* Abre na hora com o que está guardado e, se houver internet, atualiza em segundo plano. */
-self.addEventListener('fetch', (evento) => {
-  const pedido = evento.request;
-  if (pedido.method !== 'GET') return;
-  const url = new URL(pedido.url);
-  if (url.origin !== self.location.origin) return;
-
-  evento.respondWith((async () => {
+self.addEventListener('install', (e) => {
+  e.waitUntil((async () => {
     const cache = await caches.open(VERSAO);
-    const navegacao = pedido.mode === 'navigate';
-    let guardado = await cache.match(pedido, { ignoreSearch: true });
-    if (!guardado && navegacao) guardado = await cache.match('./');
+    // Um arquivo que falhe não impede a instalação dos outros.
+    await Promise.all(ARQUIVOS.map((url) =>
+      fetch(new Request(url, { cache: 'reload' }))
+        .then((r) => (r.ok ? cache.put(url, r) : null))
+        .catch(() => null)
+    ));
+    await self.skipWaiting();
+  })());
+});
 
-    const daRede = fetch(navegacao ? new Request(url.href, { cache: 'no-cache' }) : new Request(pedido, { cache: 'no-cache' }))
-      .then((resposta) => {
-        if (resposta && resposta.ok) cache.put(pedido, resposta.clone());
-        return resposta;
-      })
-      .catch(() => null);
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    const nomes = await caches.keys();
+    await Promise.all(nomes.filter((n) => n !== VERSAO).map((n) => caches.delete(n)));
+    await self.clients.claim();
+  })());
+});
 
-    if (guardado) {
-      evento.waitUntil(daRede);
-      return guardado;
-    }
-    const resposta = await daRede;
-    return resposta || new Response('Sem internet e sem cópia guardada.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
+// Responde com a cópia guardada e atualiza em segundo plano.
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  e.respondWith((async () => {
+    const cache = await caches.open(VERSAO);
+    const chave = req.mode === 'navigate' ? './' : req;
+    const guardada = await cache.match(chave, { ignoreSearch: true });
+    const daRede = fetch(req).then((r) => {
+      if (r && r.ok && r.type === 'basic') cache.put(chave, r.clone());
+      return r;
+    }).catch(() => null);
+    if (guardada) { e.waitUntil(daRede); return guardada; }
+    const r = await daRede;
+    return r || new Response('Sem conexão e sem cópia guardada.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   })());
 });
