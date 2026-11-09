@@ -2,7 +2,7 @@
    Guarda os arquivos do app no celular para abrir sem internet.
    As Bíblias não passam por aqui: ficam no banco do próprio app (IndexedDB), importadas dos arquivos do Drive.
    A cada versão nova do app, troque o valor de VERSAO. */
-const VERSAO = 'lampada-v7';
+const VERSAO = 'lampada-v8';
 const ARQUIVOS = [
   './',
   './index.html',

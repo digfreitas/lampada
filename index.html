@@ -358,6 +358,29 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.5}
 .vw-acts{display:flex;gap:2px;padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
 .vw-acts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;padding:8px 0;border-radius:10px;color:#F2F1EA}
 .opt.danger{border-color:rgba(163,58,58,.35)}
+/* árvore do nível: sem animação, tudo já aparece no estado final */
+.lvl{cursor:pointer}
+.tree{position:absolute;inset:0;background:var(--linho);color:var(--tinta);overflow:auto}
+.tree-x{position:absolute;z-index:2;top:calc(8px + env(safe-area-inset-top));right:8px;background:rgba(10,30,35,.55);color:#fff;border-radius:50%}
+.tree-x:hover{background:rgba(10,30,35,.7)}
+.scene{display:block;width:100%;height:auto}
+.tr-dots{display:flex;align-items:center;justify-content:space-between;padding:4px 2px}
+.tr-dots i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--linha);display:block}
+.tr-dots i.on{background:var(--oliva);border-color:var(--oliva)}
+.tr-dots i.now{background:var(--chama);border-color:var(--chama);box-shadow:0 0 0 3px rgba(239,169,46,.28)}
+.tr-seedgo,.tr-dim{opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .tr-up,.tr-down{transform-box:view-box;transform-origin:160px 290px;animation:trgrow .75s cubic-bezier(.2,.8,.3,1) var(--d,0s) backwards}
+  @keyframes trgrow{from{transform:scaleY(0);opacity:0}to{transform:none;opacity:1}}
+  .tr-pop{transform-box:fill-box;transform-origin:center;animation:trpop .5s ease-out var(--d,0s) backwards}
+  @keyframes trpop{from{transform:scale(0);opacity:0}to{transform:none;opacity:1}}
+  .tr-fade{animation:trfade .8s ease-out var(--d,0s) backwards}
+  @keyframes trfade{from{opacity:0}to{opacity:1}}
+  .tr-seedgo{animation:trseed 1.1s ease-in forwards}
+  @keyframes trseed{0%,45%{opacity:1}100%{opacity:0}}
+  .tr-dim{animation:trdim 3s ease-out forwards}
+  @keyframes trdim{from{opacity:1}to{opacity:0}}
+}
 .ed-prev canvas{cursor:zoom-in}
 .ed-zoom{position:absolute;right:10px;bottom:10px;background:rgba(10,30,35,.72);color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px}
 </style>
@@ -552,7 +575,7 @@ const ICP={
   plus:'<path d="M12 5v14M5 12h14"/>',
   chev:'<path d="M9 5l7 7-7 7"/>',
   chevd:'<path d="M5 9l7 7 7-7"/>',
-  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  gear:(()=>{const p=[];for(let i=0;i<8;i++){const a=i*Math.PI/4;for(const [o,r] of [[-.29,7.4],[-.19,10],[.19,10],[.29,7.4]])p.push(`${(12+r*Math.cos(a+o)).toFixed(2)} ${(12+r*Math.sin(a+o)).toFixed(2)}`);}return `<path d="M${p.join('L')}Z"/><circle cx="12" cy="12" r="3"/>`;})(),
   pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   mark:'<path d="M6 3h12v18l-6-4-6 4z"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
@@ -908,11 +931,35 @@ function planStats(p){
   return {pc,T,ahead,idxR,forecast,sched,withR,secs,rdays:rdays.size,daysDone,age};
 }
 function fmtDur(s){const m=Math.round(s/60);return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;}
+/* Árvore do nível: um desenho por camadas. Cada camada entra no estágio em que surge; ao abrir, elas aparecem em ordem até o nível atual. */
+const lerpHex=(a,b,t)=>'#'+[1,3,5].map(i=>Math.round(parseInt(a.substr(i,2),16)*(1-t)+parseInt(b.substr(i,2),16)*t).toString(16).padStart(2,'0')).join('');
+function treeSVG(lv){
+  const t=lv/9,G=290,sky0='#1B3A42',c=(a,b)=>lerpHex(a,b,t);
+  const sky=c(sky0,'#9AD4E4'),sky2=c('#2C4A48','#F7E7BC'),soil=c('#3B2F26','#70502F'),grass=c('#56705A','#74B552'),leaf=c('#6E9468','#4BA544'),leaf2=c('#587A58','#2F8038'),bark=c('#5A4636','#7B5331'),root=c('#6B5844','#C4A173');
+  const g=(cls,m,body,x=0)=>`<g class="${cls}" style="--d:${((lv?m/lv*2.2:0)+x).toFixed(2)}s">${body}</g>`;
+  const yT=[0,0,0,232,208,190,186,184,172,172][lv],wb=[0,0,0,12,15,18,19,20,30,32][lv],wt=wb*.55,big=lv>=8,cy=yT-38;
+  let h=`<defs><linearGradient id="tr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky}"/><stop offset="1" stop-color="${sky2}"/></linearGradient></defs><rect width="320" height="${G}" fill="url(#tr-sky)"/><circle cx="258" cy="60" r="${22+lv*2.4}" fill="#F2B23F" opacity="${(.35+t*.5).toFixed(2)}"/><rect class="tr-dim" width="320" height="${G}" fill="${sky0}"/><rect y="${G}" width="320" height="110" fill="${soil}"/><path d="M0 ${G}C80 ${G-8} 240 ${G-8} 320 ${G}V${G+10}H0Z" fill="${grass}"/>`;
+  h+=`<g class="${lv>=2?'tr-seedgo':'tr-pop'}"><ellipse cx="160" cy="304" rx="11" ry="7.5" fill="#B98A4E" transform="rotate(-18 160 304)"/></g>`;
+  if(lv>=2){const rs=['M160 292C158 320 150 340 132 360','M160 292C162 322 172 342 190 364','M160 292C160 325 160 350 158 384','M159 306C140 312 118 316 98 332','M161 306C182 312 204 318 226 336'];if(big)rs.push('M132 360C120 368 108 374 92 378','M190 364C204 372 220 376 236 380','M98 332C84 340 70 344 54 346','M226 336C242 344 256 348 272 350');h+=g('tr-down',2,rs.map(d=>`<path d="${d}" fill="none" stroke="${root}" stroke-width="${(2.6+lv*.3).toFixed(1)}" stroke-linecap="round"/>`).join(''));}
+  if(lv===1||lv===2)h+=g('tr-up',1,`<path d="M160 290C160 272 158 262 160 248" fill="none" stroke="${leaf}" stroke-width="5" stroke-linecap="round"/><path d="M160 254C146 240 130 240 122 248C130 262 148 264 160 254Z" fill="${leaf}"/><path d="M160 250C172 234 190 232 198 240C192 256 172 260 160 250Z" fill="${leaf2}"/>`);
+  if(lv>=3)h+=g('tr-up',3,`<path d="M${160-wb/2} ${G+3}L${160-wt/2} ${yT}L${160+wt/2} ${yT}L${160+wb/2} ${G+3}Z" fill="${bark}"/>`);
+  if(lv>=4){[`M160 ${yT+22}C140 ${yT-2} 118 ${yT-18} 96 ${yT-30}`,`M160 ${yT+30}C182 ${yT+6} 204 ${yT-12} 226 ${yT-24}`,`M160 ${yT+4}C150 ${yT-18} 138 ${yT-34} 126 ${yT-54}`,`M160 ${yT+2}C170 ${yT-20} 184 ${yT-36} 198 ${yT-56}`].forEach((d,i)=>{h+=g('tr-fade',4,`<path d="${d}" fill="none" stroke="${bark}" stroke-width="${big?9:6}" stroke-linecap="round"/>`,i*.06);});}
+  if(lv===4)[[96,yT-34],[226,yT-28],[126,yT-58],[198,yT-60]].forEach(([x,y],i)=>{h+=g('tr-pop',4,`<ellipse cx="${x}" cy="${y}" rx="13" ry="7" fill="${leaf}" transform="rotate(${i%2?-24:24} ${x} ${y})"/>`,.24+i*.06);});
+  if(lv>=5){const cr=[[160,-30,40],[118,-8,32],[202,-8,32],[136,26,30],[184,26,30],[160,6,38],[96,20,22],[224,20,22]];if(big)cr.unshift([82,-22,30],[238,-22,30],[120,-52,34],[200,-52,34],[68,24,26],[252,24,26],[160,-66,34]);cr.forEach(([x,y,r],i)=>{h+=g('tr-pop',5,`<circle cx="${x}" cy="${cy+y}" r="${r}" fill="${i%3===0?leaf2:leaf}"/>`,i*.04);});}
+  if(lv>=6){const fl=[[120,-6],[150,-40],[190,-30],[210,4],[176,10],[136,30],[100,18],[222,22],[160,-12],[190,34]];if(big)fl.push([90,-20],[232,-24],[128,-58],[196,-62],[72,26],[250,28]);fl.forEach(([x,y],i)=>{h+=g('tr-pop',6,`<circle cx="${x}" cy="${cy+y}" r="6" fill="#F9D3DD"/><circle cx="${x}" cy="${cy+y}" r="2.4" fill="#F2B23F"/>`,i*.03);});}
+  if(lv>=7){const fr=[[134,-20],[172,-26],[204,-8],[112,10],[150,14],[190,20],[128,38],[172,42],[226,12]];if(big)fr.push([84,-8],[240,-8],[160,-60],[110,-48],[214,-46]);fr.forEach(([x,y],i)=>{h+=g('tr-pop',7,`<circle cx="${x}" cy="${cy+y}" r="7" fill="#D9503A"/><circle cx="${x-2}" cy="${cy+y-2}" r="1.8" fill="#F6B3A2"/>`,i*.03);});}
+  if(lv>=9)h+=g('tr-fade',9,`<path d="M0 318C60 306 110 332 170 322C230 312 280 330 320 318V352C270 364 220 346 165 358C110 370 60 348 0 360Z" fill="#5FB3D9"/><path d="M26 332C60 326 92 340 128 336M186 334C222 328 256 342 296 336M70 350C104 344 136 356 170 350" fill="none" stroke="#C9E8F4" stroke-width="2.4" stroke-linecap="round"/>`);
+  return `<svg class="scene" viewBox="0 0 320 400" role="img" aria-label="Ilustração do estágio ${esc(LV[lv][0])}">${h}</svg>`;
+}
+function treeHTML(){
+  const L=CC.level,tot=CC.points.total,prog=L.next?(tot-L.min)/(L.next[1]-L.min):1;
+  return `<div class="tree" role="dialog" aria-modal="true" aria-label="Minha árvore"><button class="iconbtn tree-x" data-a="closeSheet" aria-label="Fechar">${ic('close')}</button>${treeSVG(L.i)}<div class="pad"><div class="lvl" style="cursor:auto"><div class="lv-top"><b>${L.name}</b><span class="sub num">Nível ${L.i+1} de 10</span></div><div class="lvbar"><i style="width:${(prog*100).toFixed(1)}%"></i></div><p class="sub num">${fmtN(tot)} pontos${L.next?`, faltam ${fmtN(L.next[1]-tot)} para ${L.next[0]}`:''}.</p><div class="tr-dots" role="img" aria-label="Estágio ${L.i+1} de 10">${LV.map((x,i)=>`<i class="${i===L.i?'now':i<L.i?'on':''}" title="${esc(x[0])}"></i>`).join('')}</div><p class="sub">${L.next?`Próximo estágio: ${L.next[0]}.`:'Você chegou ao último estágio.'}</p></div><button class="btn-sec wide" data-a="closeSheet">Voltar</button></div></div>`;
+}
 /* Nível e conquistas vêm de todas as leituras, então aparecem mesmo sem nenhum plano na lista. */
 function levelHTML(){
   if(S.settings.calm)return '';
   const st=CC.streak,L=CC.level,tot=CC.points.total;const prog=L.next?(tot-L.min)/(L.next[1]-L.min):1;
-  return `<h2 class="sec-h">Nível e conquistas</h2><div class="lvl"><div class="lv-top"><b>${L.name}</b><span class="sub num">Nível ${L.i+1} de 10</span></div><div class="lvbar"><i style="width:${(prog*100).toFixed(1)}%"></i></div><p class="sub num">${fmtN(tot)} pontos${L.next?`, faltam ${fmtN(L.next[1]-tot)} para ${L.next[0]}`:''}. ${st.grace} ${pl(st.grace,'dia de graça guardado','dias de graça guardados')}.</p><p class="sub">Coleção dos 66: ${CC.booksDone} ${pl(CC.booksDone,'selo','selos')} de livro.</p></div><div class="achs">${ACH.map(a=>{const on=CC.ach.has(a[0]);return `<div class="ach${on?'':' off'}"><span class="medal${on?'':' off'}"><svg viewBox="0 0 24 24">${ICP.star}</svg></span><div><b>${a[2]}</b><span>${a[3]}</span></div></div>`;}).join('')}</div>`;
+  return `<h2 class="sec-h">Nível e conquistas</h2><div class="lvl" data-a="openTree"><div class="lv-top"><b>${L.name}</b><span class="sub num">Nível ${L.i+1} de 10</span></div><div class="lvbar"><i style="width:${(prog*100).toFixed(1)}%"></i></div><p class="sub num">${fmtN(tot)} pontos${L.next?`, faltam ${fmtN(L.next[1]-tot)} para ${L.next[0]}`:''}. ${st.grace} ${pl(st.grace,'dia de graça guardado','dias de graça guardados')}.</p><p class="sub">Coleção dos 66: ${CC.booksDone} ${pl(CC.booksDone,'selo','selos')} de livro.</p><button class="lnk" style="align-self:flex-start" data-a="openTree">Ver minha árvore</button></div><div class="achs">${ACH.map(a=>{const on=CC.ach.has(a[0]);return `<div class="ach${on?'':' off'}"><span class="medal${on?'':' off'}"><svg viewBox="0 0 24 24">${ICP.star}</svg></span><div><b>${a[2]}</b><span>${a[3]}</span></div></div>`;}).join('')}</div>`;
 }
 function lastReadPlan(){let best=null;for(const r of S.reads)if((!best||r.at>best.at)&&plan(r.plan))best=r;return best?plan(best.plan):S.plans[0];}
 function vProgresso(){
@@ -977,6 +1024,16 @@ function booksGrid(){const cell=b=>{const x=CC.book[b];const f=x.n/x.t;return `<
   return `<div class="lbl">Antigo Testamento</div><div class="books">${rangeA(0,39).map(cell).join('')}</div><div class="lbl">Novo Testamento</div><div class="books">${rangeA(39,66).map(cell).join('')}</div>`;}
 
 /* ---------- Ajustes e imagens ---------- */
+/* Leituras que ficaram de planos apagados com "Apagar só o plano", agrupadas por plano. */
+function orphanGroups(){
+  const by=new Map();
+  for(const r of S.reads){if(plan(r.plan))continue;if(!by.has(r.plan))by.set(r.plan,{id:r.plan,n:0,us:new Map()});const g=by.get(r.plan);g.n++;g.us.set(ukey(r),{b:r.b,c:r.c,v1:r.v1,v2:r.v2});}
+  return [...by.values()].map(g=>{const us=[...g.us.values()].sort((a,b)=>a.b-b.b||a.c-b.c||a.v1-b.v1);const t=label(us);return {id:g.id,n:g.n,txt:t.length>80?t.slice(0,80)+'…':t};});
+}
+function orphansHTML(){
+  const gs=orphanGroups();if(!gs.length)return '';
+  return `<h2 class="sec-h">Leituras de planos apagados</h2><p class="sub">Continuam contando na cobertura, nos livros lidos e na sequência. Remova as que você não quiser mais.</p><div>${gs.map(g=>`<div class="switch"><div><strong>${esc(g.txt)}</strong><p class="sub num">${fmtN(g.n)} ${pl(g.n,'leitura','leituras')}</p></div><button class="mini danger" data-a="orphanDel" data-p="${g.id}">Remover</button></div>`).join('')}</div>`;
+}
 function vAjustes(){
   const s=S.settings;
   /* Pela aba não há para onde voltar; a seta só aparece quando se chega aqui de outra tela. */
@@ -991,6 +1048,7 @@ function vAjustes(){
   <div class="switch"><div><strong>Leitura tranquila</strong><p class="sub">Esconde pontos, níveis e celebrações. Progresso e sequência continuam.</p></div><button class="tg" role="switch" aria-checked="${s.calm}" data-a="toggleCalm" aria-label="Leitura tranquila"></button></div></div>
   <div class="field"><span class="lbl">Tema do app</span><div class="seg">${[['claro','Claro'],['escuro','Escuro']].map(([k,l])=>`<button data-a="setTheme" data-t="${k}" aria-pressed="${s.theme===k}">${l}</button>`).join('')}</div></div>
   <div class="field"><label for="rem">Horário de leitura</label><input class="inp" id="rem" type="time" data-in="reminder" value="${s.reminder}"><span class="sub">Por enquanto o app não envia notificações; o horário fica guardado para quando houver lembretes.</span></div>`;
+  h+=orphansHTML();
   h+=`<h2 class="sec-h">Backup</h2><p class="sub">${s.lastBackup?`Último backup: ${fmtL(s.lastBackup)}.`:'Nenhum backup feito ainda.'} O backup guarda planos, leituras, notas, destaques, marcadores e imagens. O texto das Bíblias não vai junto: se precisar, importe de novo os arquivos do Drive.</p>
   <div class="row" style="flex-wrap:wrap"><button class="btn-chama" data-a="backupNow">Fazer backup</button><button class="btn-sec" data-a="restoreBak">Restaurar backup</button></div>`;
   h+=`<h2 class="sec-h">Armazenamento</h2><p class="sub">${STO.persisted===true?'Os dados estão protegidos: o celular não apaga sozinho.':STO.persisted===false?'O navegador pode apagar os dados se o celular ficar sem espaço. Com o app instalado na tela inicial isso é raro; mantenha o backup em dia.':'Não foi possível verificar a proteção dos dados.'}${STO.usage!=null?` Em uso: ${fmtMB(STO.usage)}.`:''}</p>`;
@@ -1246,6 +1304,7 @@ function renderLayer(){
   const s=SHEET;let inner='';
   if(s.t==='fech'){L.innerHTML=fechHTML(s);return;}
   if(s.t==='verImg'){L.innerHTML=viewerHTML(s);drawViewer(s);return;}
+  if(s.t==='arvore'){L.innerHTML=treeHTML();return;}
   if(s.t==='pend'){
     inner=`<h2>Leituras pendentes</h2><p class="sub">Atraso não é fracasso. Escolha como seguir em cada plano.</p>`;
     for(const p of S.plans){const pe=pending(p);if(!pe.length)continue;const recent=pe.every(d=>diffD(d.date,TODAY)<=2);
@@ -1385,6 +1444,8 @@ const A={
   saveNote:()=>{const s=SHEET;const text=$('#nt-text').value.trim();const tags=$('#nt-tags').value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean);if(!text){toast('Escreva algo para salvar a nota');return;}
     if(s.id){const n=S.notes.find(x=>x.id===s.id);n.text=text;n.tags=tags;n.edited=TODAY;}else S.notes.push({id:uid(),b:s.b,c:s.c,v1:s.v1,v2:s.v2,text,tags,created:TODAY,edited:TODAY});SEL.clear();SHEET=null;render();toast('Nota salva');},
   delNote:()=>{S.notes=S.notes.filter(x=>x.id!==SHEET.id);SEL.clear();SHEET=null;render();toast('Nota apagada');},
+  orphanDel:(d)=>{const g=orphanGroups().find(x=>x.id===d.p);if(!g)return;sheet({t:'conf',title:'Remover estas leituras?',text:`${g.txt}: ${fmtN(g.n)} ${pl(g.n,'leitura sai','leituras saem')} da cobertura e dos livros lidos. Dias que só tinham estas leituras saem da sequência. Não dá para desfazer.`,ok:'Remover',danger:true,fn:()=>{S.reads=S.reads.filter(r=>r.plan!==d.p);render();toast('Leituras removidas');}});},
+  openTree:()=>{if(!S.settings.calm)sheet({t:'arvore'});},
   openNote:(d)=>sheet({t:'verNota',id:d.id}),
   noteGo:()=>{const n=S.notes.find(x=>x.id===SHEET.id);if(n)A.openRef({b:n.b,c:n.c,v:n.v1});},
   noteCopy:()=>{const n=S.notes.find(x=>x.id===SHEET.id);if(n)copyText(`${refStr(n.b,n.c,n.v1,n.v2)}\n${n.text}`);},
