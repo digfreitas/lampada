@@ -347,6 +347,18 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.5}
 .res .ic{margin-top:1px}
 .res.ok .ic{stroke:var(--oliva)}
 .res.er .ic{stroke:#B54A4A}
+
+/* leitura da nota e imagem ampliada */
+.nota-txt{font-family:var(--f-display);font-size:17px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.viewer{position:absolute;inset:0;background:#071013;color:#F2F1EA;display:flex;flex-direction:column}
+.vw-top{display:flex;justify-content:flex-end;padding:calc(6px + env(safe-area-inset-top)) 6px 0}
+.vw-img{flex:1;min-height:0;position:relative}
+.vw-img canvas{position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:contain}
+.vw-note{font-size:13px;line-height:1.4;color:#B9C8C6;text-align:center;padding:6px 18px 0}
+.vw-acts{display:flex;gap:2px;padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
+.vw-acts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;padding:8px 0;border-radius:10px;color:#F2F1EA}
+.ed-prev canvas{cursor:zoom-in}
+.ed-zoom{position:absolute;right:10px;bottom:10px;background:rgba(10,30,35,.72);color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px}
 </style>
 </head>
 <body>
@@ -549,7 +561,9 @@ const ICP={
   share:'<path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v7h14v-7"/>',
   aa:'<path d="M3 18l5-12 5 12M5 14h6"/><path d="M15 18l3.5-8 3.5 8M16.2 15.5h4.6"/>',
   star:'<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
-  list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'
+  list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  down:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+  trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>'
 };
 const ic=(n,c='')=>`<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${ICP[n]}</svg>`;
 const flameSVG=`<svg class="flame" viewBox="0 0 44 58" aria-hidden="true"><path d="M22 2c3 9 16 15 16 32a16 16 0 0 1-32 0c0-8 4-13 8.5-17 .8 5 3 8 6.5 9.5C21 18 20.5 9 22 2z" fill="#F2B23F"/><path d="M22 26c2 5 8 8 8 16a8 8 0 0 1-16 0c0-4 2-7 4.5-9 .5 2.6 1.6 4.2 3.5 5-.4-4.4-.6-8.3 0-12z" fill="#FBE3A6"/></svg>`;
@@ -619,7 +633,7 @@ const ACH=[
   ['recomeco','Constância','Recomeço','7 dias de sequência depois de uma quebra',C=>C.streak.recomeco],
   ['livro','Conclusão','Primeiro livro','Concluir um livro inteiro',C=>C.booksDone>=1],
   ['secao','Conclusão','Seção completa','Concluir uma seção, como os Evangelhos',C=>C.groupsDone.length>=1],
-  ['plano','Conclusão','Plano concluído','Terminar qualquer plano',C=>Object.values(C.plan).some(x=>x.pct>=1)],
+  ['plano','Conclusão','Plano concluído','Terminar qualquer plano',C=>!!S.achAt.plano||Object.values(C.plan).some(x=>x.pct>=1)],
   ['biblia','Conclusão','Bíblia inteira','Ler todos os versículos ao menos uma vez',C=>C.coverage>=1],
   ['reflexao','Profundidade','Primeira reflexão','Escrever a primeira nota',C=>S.notes.length>=1],
   ['caderno','Profundidade','Caderno de reflexões','Escrever 30 notas',C=>S.notes.length>=30],
@@ -773,7 +787,7 @@ function vPlano(){
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${esc(p.name)}</h1></div><div class="pad">`;
   h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version?esc(p.version)+(hasVer(p.version)?'':' (não importada neste celular)'):'não escolhida'}. ${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
   h+=`<div class="h-prog" style="color:var(--tinta-2);margin:0"><div class="bar" style="background:var(--linha)"><i style="width:${(pc.pct*100).toFixed(1)}%"></i></div><span class="num">${Math.floor(pc.pct*100)}%</span></div>`;
-  h+=`<div class="chips">${pend.length?`<button class="chip" data-a="catchUp" data-p="${p.id}">Colocar em dia</button><button class="chip" data-a="postpone" data-p="${p.id}">Adiar o fim</button>`:''}<button class="chip" data-a="pause" data-p="${p.id}">${p.paused?'Retomar plano':'Pausar plano'}</button><button class="chip" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button></div>`;
+  h+=`<div class="chips">${pend.length?`<button class="chip" data-a="catchUp" data-p="${p.id}">Colocar em dia</button><button class="chip" data-a="postpone" data-p="${p.id}">Adiar o fim</button>`:''}<button class="chip" data-a="pause" data-p="${p.id}">${p.paused?'Retomar plano':'Pausar plano'}</button><button class="chip" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button><button class="chip danger" data-a="delPlan" data-p="${p.id}">Apagar plano</button></div>`;
   h+=`<p class="sub">Leu na Bíblia impressa? Use Marcar lido na linha do dia. Conta igual para o plano.</p><div class="daylist">`;
   p.days.forEach((d,i)=>{const done=pc.dayDone[i];const isT=d.date===TODAY;const late=!done&&d.date<TODAY;
     const st=done?`<span class="st ok">Lido</span>`:late?`<span class="st pe">Pendente</span>`:'';
@@ -861,7 +875,7 @@ function vNotas(){
     h+=`<div class="chips"><button class="chip" data-a="nvColor" data-i="" aria-pressed="${NV.color===null}">Todas</button>${HL.map((x,i)=>`<button class="chip" data-a="nvColor" data-i="${i}" aria-pressed="${NV.color===i}"><i class="dot" style="background:${x[1]};display:inline-block;margin-right:6px"></i>${x[0]}</button>`).join('')}</div>`;
     items=hlGroups().filter(g=>NV.color===null||g.col===NV.color).map(g=>({b:g.b,c:g.c,v1:g.v1,v2:g.v2,date:g.at,sq:HL[g.col][1],title:`${refStr(g.b,g.c,g.v1,g.v2)}`,sub:HL[g.col][0],text:vtext(g.b,g.c,g.v1,okVer(S.settings.version))}));
   } else if(NV.tab==='notas'){
-    items=S.notes.map(n=>({b:n.b,c:n.c,v1:n.v1,v2:n.v2,date:n.edited,sq:'var(--tinta-2)',title:refStr(n.b,n.c,n.v1,n.v2),sub:n.tags.map(t=>'#'+t).join(' '),text:n.text}));
+    items=S.notes.map(n=>({id:n.id,b:n.b,c:n.c,v1:n.v1,v2:n.v2,date:n.edited,sq:'var(--tinta-2)',title:refStr(n.b,n.c,n.v1,n.v2),sub:n.tags.map(t=>'#'+t).join(' '),text:n.text}));
   } else {
     h+=`<div class="chips"><button class="chip" data-a="nvCol" data-c="" aria-pressed="${NV.col===null}">Todas</button>${S.cols.map(c=>`<button class="chip" data-a="nvCol" data-c="${esc(c)}" aria-pressed="${NV.col===c}">${esc(c)}</button>`).join('')}</div>`;
     const by=new Map();for(const m of S.marks){if(NV.col!==null&&m.col!==NV.col)continue;const k=`${m.b}.${m.c}.${m.v}`;if(!by.has(k))by.set(k,{b:m.b,c:m.c,v1:m.v,v2:m.v,date:m.at,cols:[]});by.get(k).cols.push(m.col);}
@@ -871,7 +885,7 @@ function vNotas(){
   items.sort(NV.sort==='recentes'?(a,b)=>a.date<b.date?1:a.date>b.date?-1:0:(a,b)=>a.b-b.b||a.c-b.c||a.v1-b.v1);
   h+=`<div class="row" style="justify-content:space-between"><div class="seg" style="flex:none">${[['recentes','Recentes'],['biblica','Ordem bíblica']].map(([k,l])=>`<button data-a="nvSort" data-s="${k}" aria-pressed="${NV.sort===k}" style="padding:6px 12px">${l}</button>`).join('')}</div><button class="lnk" data-a="nvCopy">Copiar lista</button></div>`;
   if(!items.length)h+=`<div class="empty">${q?'Nada encontrado para essa busca. Tente outra referência ou palavra.':NV.tab==='notas'?'Selecione versículos no leitor e toque em Anotar para escrever a primeira nota.':NV.tab==='dest'?'Selecione versículos no leitor e escolha uma cor para destacar.':'Selecione versículos no leitor e toque em Marcar para guardar aqui.'}</div>`;
-  h+=`<div>`+items.map(x=>`<button class="item" data-a="openRef" data-b="${x.b}" data-c="${x.c}" data-v="${x.v1}"><i class="sq" style="background:${x.sq}"></i><div class="it"><b>${esc(x.title)}</b><p>${esc(x.text)}</p><small>${esc(x.sub?x.sub+', ':'')}${fmtS(x.date)}</small></div></button>`).join('')+`</div>`;
+  h+=`<div>`+items.map(x=>`<button class="item" data-a="${x.id?'openNote':'openRef'}"${x.id?` data-id="${x.id}"`:''} data-b="${x.b}" data-c="${x.c}" data-v="${x.v1}"><i class="sq" style="background:${x.sq}"></i><div class="it"><b>${esc(x.title)}</b><p>${esc(x.text)}</p><small>${esc(x.sub?x.sub+', ':'')}${fmtS(x.date)}</small></div></button>`).join('')+`</div>`;
   NV._items=items;
   return h+`</div>`;
 }
@@ -891,9 +905,10 @@ function planStats(p){
   return {pc,T,ahead,idxR,forecast,sched,withR,secs,rdays:rdays.size,daysDone,age};
 }
 function fmtDur(s){const m=Math.round(s/60);return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;}
+function lastReadPlan(){let best=null;for(const r of S.reads)if((!best||r.at>best.at)&&plan(r.plan))best=r;return best?plan(best.plan):S.plans[0];}
 function vProgresso(){
   if(!S.plans.length)return `<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button></div>`;
-  const p=plan(R.pid)||S.plans[0];const s=planStats(p),pc=s.pc,st=CC.streak;
+  const p=plan(R.pid)||lastReadPlan();const s=planStats(p),pc=s.pc,st=CC.streak;
   let h=`<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div>`;
   if(S.plans.length>1)h+=`<div class="chips">${S.plans.map(q=>`<button class="chip" data-a="progPlan" data-p="${q.id}" aria-pressed="${q.id===p.id}"><i class="dot" style="background:${PCOL[q.color]};display:inline-block;margin-right:6px"></i>${esc(q.name)}</button>`).join('')}</div>`;
   const pct=pc.pct*100,C=2*Math.PI*50;
@@ -928,7 +943,10 @@ function burnup(p){
   const X=d=>L+(diffD(start,d)/span)*(W-L-Rr);const Y=v=>Tp+(1-v/pc.tot)*(H-Tp-B);
   let cum=0,pp=`M${X(start).toFixed(1)} ${Y(0).toFixed(1)}`;for(const d of p.days){cum+=dayV(d);pp+=` L${X(d.date).toFixed(1)} ${Y(cum).toFixed(1)}`;}
   const byDate=new Map();for(const r of S.reads)if(r.plan===p.id)byDate.set(r.refDate,(byDate.get(r.refDate)||0)+uv(r));
-  let c2=0,rp=`M${X(start).toFixed(1)} ${Y(0).toFixed(1)}`;const lastD=TODAY<end?TODAY:end;for(let d=start;d<=lastD;d=addD(d,1)){c2+=byDate.get(d)||0;rp+=` L${X(d).toFixed(1)} ${Y(c2).toFixed(1)}`;}
+  /* Leituras feitas antes do início entram no primeiro ponto; as feitas depois do fim, no último. */
+  let c2=0,rp=`M${X(start).toFixed(1)} ${Y(0).toFixed(1)}`;for(const [d,n] of byDate)if(d<start)c2+=n;
+  const lastD=TODAY<start?start:TODAY<end?TODAY:end;for(let d=start;d<=lastD;d=addD(d,1)){c2+=byDate.get(d)||0;rp+=` L${X(d).toFixed(1)} ${Y(c2).toFixed(1)}`;}
+  if(TODAY>end){for(const [d,n] of byDate)if(d>end)c2+=n;rp+=` L${X(end).toFixed(1)} ${Y(c2).toFixed(1)}`;}
   const area=rp+` L${X(lastD).toFixed(1)} ${Y(0).toFixed(1)} Z`;
   const tx=X(lastD);
   return `<div class="chartbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Versículos lidos e planejados ao longo do plano">
@@ -1112,7 +1130,7 @@ function drawVerse(cv,o){
 function edState(){return R.ed;}
 function vEditor(){
   const e=R.ed;const ref=verRef(e.ver,e.b,e.c,e.v1,e.v2);
-  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Imagem do versículo</h1></div><div class="ed-prev"><canvas id="ed-cv" aria-label="Prévia da imagem"></canvas></div><div class="pad">`;
+  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Imagem do versículo</h1></div><div class="ed-prev"><canvas id="ed-cv" data-a="edZoom" aria-label="Prévia da imagem"></canvas><button class="ed-zoom" data-a="edZoom">Ampliar</button></div><div class="pad">`;
   h+=`<div class="versebox"><small>Versículo</small><q>${esc(ref)} (${e.ver})</q>${e.choices&&e.choices.length>1?`<button class="lnk" data-a="edPick" style="text-align:left">Trocar versículo</button>`:''}<span class="warnline" id="ed-warn"></span></div>`;
   h+=`<div class="field"><span class="lbl">Formato</span><div class="seg">${Object.entries(FMT).map(([k,v])=>`<button data-a="edSet" data-k="fmt" data-v="${k}" aria-pressed="${e.fmt===k}">${v[2]}</button>`).join('')}</div></div>`;
   h+=`<div class="field"><span class="lbl">Modelo</span><div class="tpls">${TPL.map(t=>`<button class="tpl" data-a="edSet" data-k="tpl" data-v="${t.id}" aria-pressed="${e.tpl===t.id}"><canvas data-tpl="${t.id}" width="112" height="152"></canvas>${t.n}</button>`).join('')}${PHOTO?`<button class="tpl" data-a="edSet" data-k="tpl" data-v="foto" aria-pressed="${e.tpl==='foto'}"><canvas data-tpl="foto" width="112" height="152"></canvas>Sua foto</button>`:''}</div><label class="lnk" for="ed-file" style="cursor:pointer">Usar foto da galeria</label><input id="ed-file" type="file" accept="image/*" data-in="edfile" style="position:absolute;width:1px;height:1px;opacity:0"></div>`;
@@ -1156,7 +1174,7 @@ function progText(p,items){
 }
 function vCartao(){
   const c=R.pc,p=plan(c.pid);
-  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Compartilhar progresso</h1></div><div class="ed-prev"><canvas id="pc-cv" aria-label="Prévia do cartão de progresso"></canvas></div><div class="pad">`;
+  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Compartilhar progresso</h1></div><div class="ed-prev"><canvas id="pc-cv" data-a="pcZoom" aria-label="Prévia do cartão de progresso"></canvas><button class="ed-zoom" data-a="pcZoom">Ampliar</button></div><div class="pad">`;
   h+=`<p class="sub">O nome do plano e o percentual aparecem sempre. Notas e destaques nunca entram no cartão.</p>`;
   h+=`<div class="field"><span class="lbl">Formato</span><div class="seg">${Object.entries(FMT).map(([k,v])=>`<button data-a="pcSet" data-k="fmt" data-v="${k}" aria-pressed="${c.fmt===k}">${v[2]}</button>`).join('')}</div></div>`;
   h+=`<div class="field"><span class="lbl">Modelo</span><div class="tpls">${TPL.filter(t=>['aurora','linho','estrelas','oliveira','ambar'].includes(t.id)).map(t=>`<button class="tpl" data-a="pcSet" data-k="tpl" data-v="${t.id}" aria-pressed="${c.tpl===t.id}"><canvas data-tpl="${t.id}" width="112" height="152"></canvas>${t.n}</button>`).join('')}</div></div>`;
@@ -1199,13 +1217,23 @@ function drawProgress(cv,c){
   ctx.textAlign='left';ctx.fillStyle=ink;ctx.globalAlpha=.85;const my=h-Math.round(w*.06);drawFlame(ctx,w/2-w*.075,my-w*.012,w*.012);ctx.font=`600 ${Math.round(w*.026)}px ${UIF}`;ctx.fillText('Lâmpada',w/2-w*.055,my);ctx.globalAlpha=1;
 }
 function drawCard(){FONTS_READY.then(()=>{const cv=$('#pc-cv');if(!cv||R.v!=='cartao')return;drawProgress(cv,R.pc);document.querySelectorAll('canvas[data-tpl]').forEach(c=>{const ctx=c.getContext('2d');ctx.save();ctx.scale(112/1080,152/1460);drawBg(ctx,c.dataset.tpl,1080,1460,null);ctx.restore();});});}
-function drawThumbs(){FONTS_READY.then(()=>{document.querySelectorAll('canvas[data-thumb]').forEach(c=>{const im=S.images[+c.dataset.thumb];if(!im)return;const big=document.createElement('canvas');if(im.kind==='prog'){drawProgress(big,im);}else{const o={...im,tpl:im.tpl==='foto'?'aurora':im.tpl};drawVerse(big,edOpts(o));}c.width=216;c.height=Math.round(216*big.height/big.width);c.getContext('2d').drawImage(big,0,0,c.width,c.height);});});}
+/* A foto da galeria não fica guardada: imagens feitas com ela voltam com o fundo Aurora. */
+function drawSaved(cv,im){if(im.kind==='prog')drawProgress(cv,im);else drawVerse(cv,edOpts({...im,tpl:im.tpl==='foto'?'aurora':im.tpl}));}
+function viewerHTML(s){
+  const im=s.live?null:S.images[s.i];
+  const aviso=im&&im.tpl==='foto'?`<p class="vw-note">A foto original não fica guardada no app. Aqui ela aparece com o fundo Aurora.</p>`:'';
+  const acts=im?`<div class="vw-acts" role="toolbar" aria-label="Ações da imagem"><button data-a="vwShare">${ic('share')}Compartilhar</button><button data-a="vwSave">${ic('down')}Salvar</button><button data-a="vwEdit">${ic('pen')}Editar</button><button data-a="vwDel">${ic('trash')}Apagar</button></div>`:'';
+  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="Imagem ampliada"><div class="vw-top"><button class="iconbtn" data-a="closeSheet" aria-label="Fechar">${ic('close')}</button></div><div class="vw-img"><canvas id="vw-cv" role="img" aria-label="Imagem ampliada"></canvas></div>${aviso}${acts}</div>`;
+}
+function drawViewer(s){FONTS_READY.then(()=>{const cv=$('#vw-cv');if(!cv||SHEET!==s)return;if(s.live==='ed')drawVerse(cv,edOpts(R.ed));else if(s.live==='pc')drawProgress(cv,R.pc);else if(S.images[s.i])drawSaved(cv,S.images[s.i]);});}
+function drawThumbs(){FONTS_READY.then(()=>{document.querySelectorAll('canvas[data-thumb]').forEach(c=>{const im=S.images[+c.dataset.thumb];if(!im)return;const big=document.createElement('canvas');drawSaved(big,im);c.width=216;c.height=Math.round(216*big.height/big.width);c.getContext('2d').drawImage(big,0,0,c.width,c.height);});});}
 
 /* ---------- Folhas ---------- */
 function renderLayer(){
   const L=$('#layer');if(!SHEET){L.innerHTML='';L.classList.remove('on');return;}L.classList.add('on');
   const s=SHEET;let inner='';
   if(s.t==='fech'){L.innerHTML=fechHTML(s);return;}
+  if(s.t==='verImg'){L.innerHTML=viewerHTML(s);drawViewer(s);return;}
   if(s.t==='pend'){
     inner=`<h2>Leituras pendentes</h2><p class="sub">Atraso não é fracasso. Escolha como seguir em cada plano.</p>`;
     for(const p of S.plans){const pe=pending(p);if(!pe.length)continue;const recent=pe.every(d=>diffD(d.date,TODAY)<=2);
@@ -1222,6 +1250,11 @@ function renderLayer(){
   }
   else if(s.t==='aa'){
     inner=`<h2>Aparência do texto</h2><div class="field"><span class="lbl">Tamanho da letra</span><div class="row"><button class="btn-sec" data-a="font" data-d="-1" aria-label="Diminuir letra">A−</button><span class="num" style="flex:1;text-align:center">${S.settings.font} px</span><button class="btn-sec" data-a="font" data-d="1" aria-label="Aumentar letra">A+</button></div></div><div class="field"><span class="lbl">Fundo</span><div class="seg">${[['claro','Claro'],['sepia','Sépia'],['escuro','Escuro']].map(([k,l])=>`<button data-a="readerTheme" data-t="${k}" aria-pressed="${S.settings.reader===k}">${l}</button>`).join('')}</div></div>`;
+  }
+  else if(s.t==='verNota'){
+    const n=S.notes.find(x=>x.id===s.id);
+    if(!n)inner=`<h2>Nota apagada</h2>`;
+    else inner=`<h2>${esc(refStr(n.b,n.c,n.v1,n.v2))}</h2><p class="nota-txt">${esc(n.text)}</p>${n.tags.length?`<p class="sub">${esc(n.tags.map(t=>'#'+t).join(' '))}</p>`:''}<p class="sub">Escrita em ${fmtS(n.created)}${n.edited!==n.created?`, editada em ${fmtS(n.edited)}`:''}</p><button class="btn-chama wide" data-a="noteGo">${ic('biblia','sm')} Ir para o texto bíblico</button><div class="row"><button class="btn-sec" style="flex:1" data-a="noteCopy">${ic('copy','sm')} Copiar</button><button class="btn-sec" style="flex:1" data-a="noteEdit">${ic('pen','sm')} Editar</button><button class="btn-sec danger" style="flex:1" data-a="noteDel">Apagar</button></div>`;
   }
   else if(s.t==='nota'){
     const n=s.id?S.notes.find(x=>x.id===s.id):null;
@@ -1293,6 +1326,9 @@ function addReads(p,d,units,origin,refDate){const ver=readerVer?readerVer():p.ve
 }
 function openFech(p,d,prevAch){CC=compute();const newAch=prevAch?[...CC.ach].filter(a=>!prevAch.has(a)):[];sheet({t:'fech',pid:p.id,did:d.id,newAch});}
 function copyText(t){const done=()=>toast('Texto copiado');try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,()=>sheet({t:'copy',text:t}));return;}}catch(e){}sheet({t:'copy',text:t});}
+/* Não guarda duas imagens com as mesmas escolhas. Com foto da galeria guarda sempre, porque a foto pode ser outra. */
+function keepImage(rec){const k=x=>JSON.stringify({...x,at:0});if(rec.tpl==='foto'||!S.images.some(x=>k(x)===k(rec)))S.images.unshift(rec);}
+const vwBlob=()=>new Promise((res,rej)=>{const c=$('#vw-cv');if(!c){rej(new Error('sem imagem'));return;}c.toBlob(b=>b?res(b):rej(new Error('sem imagem')),'image/png');});
 const A={
   tab:(d)=>tab(d.t),
   back:()=>back(),
@@ -1306,6 +1342,9 @@ const A={
   postpone:(d)=>{const p=plan(d.p);postpone(p);SHEET=null;render();toast(`Fim adiado para ${fmtM(planEnd(p))}`);},
   retro:(d)=>{const p=plan(d.p);for(const day of pending(p))addReads(p,day,day.units,'retroativa',day.date);SHEET=null;render();toast('Leituras registradas na data prevista');},
   pause:(d)=>{const p=plan(d.p);togglePause(p);render();toast(p.paused?'Plano pausado':`Plano retomado. Término em ${fmtM(planEnd(p))}`);},
+  delPlan:(d)=>{const p=plan(d.p);const n=S.images.filter(im=>im.kind==='prog'&&im.pid===p.id).length;
+    sheet({t:'conf',title:'Apagar este plano?',text:`${p.name} sai da lista e o cronograma é apagado. As leituras feitas continuam contando na sequência, na cobertura e nos livros lidos, mas os pontos de conclusão deste plano saem. Notas e destaques não mudam.${n?` ${n===1?'O cartão de progresso deste plano também sai':`Os ${n} cartões de progresso deste plano também saem`} de Minhas imagens.`:''}`,ok:'Apagar plano',danger:true,
+      fn:()=>{S.plans=S.plans.filter(x=>x.id!==p.id);S.images=S.images.filter(im=>!(im.kind==='prog'&&im.pid===p.id));HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Plano apagado');}});},
   quickMark:(d)=>{const p=plan(d.p),day=p.days.find(x=>x.id===d.d);addReads(p,day,day.units,'rápida');render();toast('Dia marcado como lido');},
   unmarkDay:(d)=>{S.reads=S.reads.filter(r=>!(r.plan===d.p&&r.day===d.d));render();toast('Marcação desfeita. Os pontos foram estornados.');},
   tapVerse:(d)=>{if(SEL.has(d.k))SEL.delete(d.k);else SEL.add(d.k);render();},
@@ -1315,6 +1354,11 @@ const A={
   saveNote:()=>{const s=SHEET;const text=$('#nt-text').value.trim();const tags=$('#nt-tags').value.split(',').map(x=>x.trim().replace(/^#/,'')).filter(Boolean);if(!text){toast('Escreva algo para salvar a nota');return;}
     if(s.id){const n=S.notes.find(x=>x.id===s.id);n.text=text;n.tags=tags;n.edited=TODAY;}else S.notes.push({id:uid(),b:s.b,c:s.c,v1:s.v1,v2:s.v2,text,tags,created:TODAY,edited:TODAY});SEL.clear();SHEET=null;render();toast('Nota salva');},
   delNote:()=>{S.notes=S.notes.filter(x=>x.id!==SHEET.id);SEL.clear();SHEET=null;render();toast('Nota apagada');},
+  openNote:(d)=>sheet({t:'verNota',id:d.id}),
+  noteGo:()=>{const n=S.notes.find(x=>x.id===SHEET.id);if(n)A.openRef({b:n.b,c:n.c,v:n.v1});},
+  noteCopy:()=>{const n=S.notes.find(x=>x.id===SHEET.id);if(n)copyText(`${refStr(n.b,n.c,n.v1,n.v2)}\n${n.text}`);},
+  noteEdit:()=>{const n=S.notes.find(x=>x.id===SHEET.id);if(n)sheet({t:'nota',id:n.id,b:n.b,c:n.c,v1:n.v1,v2:n.v2});},
+  noteDel:()=>{const id=SHEET.id;sheet({t:'conf',title:'Apagar esta nota?',text:'A nota sai das suas anotações e não dá para desfazer.',ok:'Apagar',danger:true,fn:()=>{S.notes=S.notes.filter(x=>x.id!==id);render();toast('Nota apagada');}});},
   markSel:()=>{const r=selRange();sheet({t:'marc',...r});},
   toggleCol:(d)=>{const s=SHEET;const vs=[...SEL].map(k=>k.split('.').map(Number));const list=vs.length?vs:[[s.b,s.c,s.v1]];const on=S.marks.some(m=>m.b===list[0][0]&&m.c===list[0][1]&&m.v===list[0][2]&&m.col===d.c);
     for(const [b,c,v] of list){S.marks=S.marks.filter(m=>!(m.b===b&&m.c===c&&m.v===v&&m.col===d.c));if(!on)S.marks.push({id:uid(),b,c,v,col:d.c,at:TODAY});}CC=compute();save();renderLayer();},
@@ -1343,15 +1387,21 @@ const A={
   edToggle:(d)=>{R.ed[d.k]=!R.ed[d.k];render();},
   edCopy:()=>{const e=R.ed;copyText(`${verRef(e.ver,e.b,e.c,e.v1,e.v2)}${e.ver?` (${e.ver})`:''}\n${vtextRange(e.b,e.c,e.v1,e.v2,e.ver)}`);},
   edMake:()=>{FONTS_READY.then(()=>{const e=R.ed;const cv=document.createElement('canvas');drawVerse(cv,edOpts(e));const url=cv.toDataURL('image/png');
-    S.images.unshift({kind:'verso',b:e.b,c:e.c,v1:e.v1,v2:e.v2,ver:e.ver,fmt:e.fmt,tpl:e.tpl,font:e.font,color:e.color,showDay:e.showDay,dayLabel:e.dayLabel,showMark:e.showMark,at:TODAY});save();
+    keepImage({kind:'verso',b:e.b,c:e.c,v1:e.v1,v2:e.v2,ver:e.ver,fmt:e.fmt,tpl:e.tpl,font:e.font,color:e.color,showDay:e.showDay,dayLabel:e.dayLabel,showMark:e.showMark,at:TODAY});save();
     sheet({t:'out',url,kind:'verso',alt:`Imagem com ${verRef(e.ver,e.b,e.c,e.v1,e.v2)}`});});},
   shareProg:(d)=>{SHEET=null;go({v:'cartao',tab:R.tab,pc:{pid:d.p,fmt:'story',tpl:'aurora',items:{dias:true,seq:true,livros:true,caps:false,cal:false,nivel:false,conq:false,vers:false,nome:false},nome:''}});},
   pcSet:(d)=>{R.pc[d.k]=d.v;render();},
   pcToggle:(d)=>{R.pc.items[d.k]=!R.pc.items[d.k];render();},
   pcCopy:()=>{copyText(progText(plan(R.pc.pid),R.pc.items));},
-  pcMake:()=>{FONTS_READY.then(()=>{const cv=document.createElement('canvas');drawProgress(cv,R.pc);S.images.unshift({kind:'prog',...JSON.parse(JSON.stringify(R.pc)),at:TODAY});save();sheet({t:'out',url:cv.toDataURL('image/png'),kind:'prog',alt:'Cartão de progresso'});});},
+  pcMake:()=>{FONTS_READY.then(()=>{const cv=document.createElement('canvas');drawProgress(cv,R.pc);keepImage({kind:'prog',...JSON.parse(JSON.stringify(R.pc)),at:TODAY});save();sheet({t:'out',url:cv.toDataURL('image/png'),kind:'prog',alt:'Cartão de progresso'});});},
   openImages:()=>go({v:'imagens',tab:R.tab}),
-  openImg:(d)=>{const im=S.images[+d.i];if(im.kind==='prog')go({v:'cartao',tab:R.tab,pc:JSON.parse(JSON.stringify(im))});else openEditor({...im,tpl:im.tpl==='foto'?'aurora':im.tpl});},
+  openImg:(d)=>sheet({t:'verImg',i:+d.i}),
+  edZoom:()=>sheet({t:'verImg',live:'ed'}),
+  pcZoom:()=>sheet({t:'verImg',live:'pc'}),
+  vwShare:async()=>{try{const r=await shareOrDownload(await vwBlob(),`lampada-${TODAY}.png`,'Lâmpada');if(r==='downloaded')toast('Imagem salva em Downloads');}catch(e){toast('Não consegui compartilhar a imagem');}},
+  vwSave:async()=>{try{download(await vwBlob(),`lampada-${TODAY}.png`);toast('Imagem salva');}catch(e){toast('Não consegui salvar a imagem');}},
+  vwEdit:()=>{const im=S.images[SHEET.i];if(!im)return;if(im.kind==='prog')go({v:'cartao',tab:R.tab,pc:JSON.parse(JSON.stringify(im))});else openEditor({...im,tpl:im.tpl==='foto'?'aurora':im.tpl});},
+  vwDel:()=>{const i=SHEET.i;sheet({t:'conf',title:'Apagar esta imagem?',text:'Ela sai de Minhas imagens. Os arquivos que você já salvou ou compartilhou não são afetados.',ok:'Apagar',danger:true,fn:()=>{S.images.splice(i,1);render();toast('Imagem apagada');}});},
   openSettings:()=>go({v:'ajustes',tab:R.tab}),
   setTheme:(d)=>{S.settings.theme=d.t;render();},
   toggleCalm:()=>{S.settings.calm=!S.settings.calm;render();toast(S.settings.calm?'Leitura tranquila ligada':'Leitura tranquila desligada');},
