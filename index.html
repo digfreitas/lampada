@@ -357,6 +357,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.5}
 .vw-note{font-size:13px;line-height:1.4;color:#B9C8C6;text-align:center;padding:6px 18px 0}
 .vw-acts{display:flex;gap:2px;padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
 .vw-acts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;padding:8px 0;border-radius:10px;color:#F2F1EA}
+.opt.danger{border-color:rgba(163,58,58,.35)}
 .ed-prev canvas{cursor:zoom-in}
 .ed-zoom{position:absolute;right:10px;bottom:10px;background:rgba(10,30,35,.72);color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px}
 </style>
@@ -620,7 +621,7 @@ function fixState(s){const d=seed();s.settings={...d.settings,...(s.settings||{}
 function load(){try{const t=localStorage.getItem(KEY);if(t){const s=JSON.parse(t);if(s&&s.v===1)return fixState(s);}}catch(e){}return seed();}
 function seed(){
   return {v:1,created:TODAY,settings:{version:null,reminder:'06:30',theme:prefersDark()?'escuro':'claro',reader:'claro',font:19,calm:false,titles:true,lastBackup:null,backupSnooze:null},
-    plans:[],reads:[],hl:{},hlAt:{},notes:[],marks:[],cols:['Ler depois','Para o grupo'],catchups:[],images:[],achAt:{}};
+    plans:[],reads:[],hl:{},hlAt:{},notes:[],marks:[],cols:['Ler depois','Para o grupo'],catchups:[],images:[],achAt:{},ptsKept:0};
 }
 
 /* ---------------- cálculo derivado ---------------- */
@@ -682,6 +683,7 @@ function compute(){
   C.book.forEach((x,b)=>{if(x.done)extras.push({d:x.date,n:25,l:`${BK[b][0]} concluído`});});
   for(const p of S.plans){const ms=C.plan[p.id].ms;for(const q of [25,50,75])if(ms[q])extras.push({d:ms[q],n:30,l:`${q}% de ${p.name}`});if(ms[100])extras.push({d:ms[100],n:100,l:`${p.name} concluído`});}
   for(const e of extras)total+=e.n;
+  total+=S.ptsKept||0;
   C.points={total,byDay,extras,today:byDay.get(TODAY)||{porcao:0,caps:0,notas:0,dest:0,emdia:0,sum:0,t:0},todayExtras:extras.filter(e=>e.d===TODAY)};
   let li=0;for(let i=0;i<LV.length;i++)if(total>=LV[i][1])li=i;C.level={i:li,name:LV[li][0],min:LV[li][1],next:LV[li+1]?LV[li+1]:null};
   C.ach=new Set(ACH.filter(a=>a[4](C)).map(a=>a[0]));
@@ -787,6 +789,7 @@ function vPlano(){
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${esc(p.name)}</h1></div><div class="pad">`;
   h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version?esc(p.version)+(hasVer(p.version)?'':' (não importada neste celular)'):'não escolhida'}. ${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
   h+=`<div class="h-prog" style="color:var(--tinta-2);margin:0"><div class="bar" style="background:var(--linha)"><i style="width:${(pc.pct*100).toFixed(1)}%"></i></div><span class="num">${Math.floor(pc.pct*100)}%</span></div>`;
+  h+=`<h2 class="sec-h">Planejado e realizado</h2>`+burnup(p);
   h+=`<div class="chips">${pend.length?`<button class="chip" data-a="catchUp" data-p="${p.id}">Colocar em dia</button><button class="chip" data-a="postpone" data-p="${p.id}">Adiar o fim</button>`:''}<button class="chip" data-a="pause" data-p="${p.id}">${p.paused?'Retomar plano':'Pausar plano'}</button><button class="chip" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button><button class="chip danger" data-a="delPlan" data-p="${p.id}">Apagar plano</button></div>`;
   h+=`<p class="sub">Leu na Bíblia impressa? Use Marcar lido na linha do dia. Conta igual para o plano.</p><div class="daylist">`;
   p.days.forEach((d,i)=>{const done=pc.dayDone[i];const isT=d.date===TODAY;const late=!done&&d.date<TODAY;
@@ -905,9 +908,15 @@ function planStats(p){
   return {pc,T,ahead,idxR,forecast,sched,withR,secs,rdays:rdays.size,daysDone,age};
 }
 function fmtDur(s){const m=Math.round(s/60);return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;}
+/* Nível e conquistas vêm de todas as leituras, então aparecem mesmo sem nenhum plano na lista. */
+function levelHTML(){
+  if(S.settings.calm)return '';
+  const st=CC.streak,L=CC.level,tot=CC.points.total;const prog=L.next?(tot-L.min)/(L.next[1]-L.min):1;
+  return `<h2 class="sec-h">Nível e conquistas</h2><div class="lvl"><div class="lv-top"><b>${L.name}</b><span class="sub num">Nível ${L.i+1} de 10</span></div><div class="lvbar"><i style="width:${(prog*100).toFixed(1)}%"></i></div><p class="sub num">${fmtN(tot)} pontos${L.next?`, faltam ${fmtN(L.next[1]-tot)} para ${L.next[0]}`:''}. ${st.grace} ${pl(st.grace,'dia de graça guardado','dias de graça guardados')}.</p><p class="sub">Coleção dos 66: ${CC.booksDone} ${pl(CC.booksDone,'selo','selos')} de livro.</p></div><div class="achs">${ACH.map(a=>{const on=CC.ach.has(a[0]);return `<div class="ach${on?'':' off'}"><span class="medal${on?'':' off'}"><svg viewBox="0 0 24 24">${ICP.star}</svg></span><div><b>${a[2]}</b><span>${a[3]}</span></div></div>`;}).join('')}</div>`;
+}
 function lastReadPlan(){let best=null;for(const r of S.reads)if((!best||r.at>best.at)&&plan(r.plan))best=r;return best?plan(best.plan):S.plans[0];}
 function vProgresso(){
-  if(!S.plans.length)return `<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button></div>`;
+  if(!S.plans.length)return `<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button>${levelHTML()}<button class="btn-sec" data-a="openImages">Minhas imagens (${S.images.length})</button></div>`;
   const p=plan(R.pid)||lastReadPlan();const s=planStats(p),pc=s.pc,st=CC.streak;
   let h=`<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div>`;
   if(S.plans.length>1)h+=`<div class="chips">${S.plans.map(q=>`<button class="chip" data-a="progPlan" data-p="${q.id}" aria-pressed="${q.id===p.id}"><i class="dot" style="background:${PCOL[q.color]};display:inline-block;margin-right:6px"></i>${esc(q.name)}</button>`).join('')}</div>`;
@@ -930,11 +939,7 @@ function vProgresso(){
   h+=`<h2 class="sec-h">Planejado e realizado</h2>`+burnup(p);
   h+=`<h2 class="sec-h">Últimas 12 semanas</h2>`+calendar();
   h+=`<h2 class="sec-h">Livros lidos</h2><p class="sub">Somando todos os planos. Verde = livro concluído.</p>`+booksGrid();
-  if(!S.settings.calm){
-    const L=CC.level,tot=CC.points.total;const prog=L.next?(tot-L.min)/(L.next[1]-L.min):1;
-    h+=`<h2 class="sec-h">Nível e conquistas</h2><div class="lvl"><div class="lv-top"><b>${L.name}</b><span class="sub num">Nível ${L.i+1} de 10</span></div><div class="lvbar"><i style="width:${(prog*100).toFixed(1)}%"></i></div><p class="sub num">${fmtN(tot)} pontos${L.next?`, faltam ${fmtN(L.next[1]-tot)} para ${L.next[0]}`:''}. ${st.grace} ${pl(st.grace,'dia de graça guardado','dias de graça guardados')}.</p><p class="sub">Coleção dos 66: ${CC.booksDone} ${pl(CC.booksDone,'selo','selos')} de livro.</p></div>`;
-    h+=`<div class="achs">${ACH.map(a=>{const on=CC.ach.has(a[0]);return `<div class="ach${on?'':' off'}"><span class="medal${on?'':' off'}"><svg viewBox="0 0 24 24">${ICP.star}</svg></span><div><b>${a[2]}</b><span>${a[3]}</span></div></div>`;}).join('')}</div>`;
-  }
+  h+=levelHTML();
   h+=`<div class="row" style="flex-wrap:wrap"><button class="btn-chama" data-a="shareProg" data-p="${p.id}">${ic('share','sm')} Compartilhar progresso</button><button class="btn-sec" data-a="openImages">Minhas imagens (${S.images.length})</button></div>`;
   return h+`</div>`;
 }
@@ -1257,6 +1262,10 @@ function renderLayer(){
   else if(s.t==='aa'){
     inner=`<h2>Aparência do texto</h2><div class="field"><span class="lbl">Tamanho da letra</span><div class="row"><button class="btn-sec" data-a="font" data-d="-1" aria-label="Diminuir letra">A−</button><span class="num" style="flex:1;text-align:center">${S.settings.font} px</span><button class="btn-sec" data-a="font" data-d="1" aria-label="Aumentar letra">A+</button></div></div><div class="field"><span class="lbl">Fundo</span><div class="seg">${[['claro','Claro'],['sepia','Sépia'],['escuro','Escuro']].map(([k,l])=>`<button data-a="readerTheme" data-t="${k}" aria-pressed="${S.settings.reader===k}">${l}</button>`).join('')}</div></div>`;
   }
+  else if(s.t==='delPlan'){
+    const p=plan(s.pid);
+    inner=`<h2>Apagar este plano?</h2><p class="sub">${esc(p.name)}: o cronograma sai da lista. Notas e destaques não mudam.${cardsTxt(planCards(p))}</p><button class="opt" data-a="delKeep"><strong>Apagar só o plano</strong><span>Mantém meu avanço: sequência, cobertura, livros lidos, pontos e nível continuam.</span></button><button class="opt danger" data-a="delAll"><strong>Apagar o plano e as leituras dele</strong><span>Remove o que foi registrado neste plano. Sequência, cobertura, livros lidos, pontos e conquistas são recalculados e podem diminuir.</span></button><button class="btn-sec" data-a="closeSheet">Cancelar</button>`;
+  }
   else if(s.t==='verNota'){
     const n=S.notes.find(x=>x.id===s.id);
     if(!n)inner=`<h2>Nota apagada</h2>`;
@@ -1332,6 +1341,19 @@ function addReads(p,d,units,origin,refDate){const ver=readerVer?readerVer():p.ve
 }
 function openFech(p,d,prevAch){CC=compute();const newAch=prevAch?[...CC.ach].filter(a=>!prevAch.has(a)):[];sheet({t:'fech',pid:p.id,did:d.id,newAch});}
 function copyText(t){const done=()=>toast('Texto copiado');try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,()=>sheet({t:'copy',text:t}));return;}}catch(e){}sheet({t:'copy',text:t});}
+const planCards=p=>S.images.filter(im=>im.kind==='prog'&&im.pid===p.id).length;
+const planReads=p=>S.reads.filter(r=>r.plan===p.id).length;
+const cardsTxt=n=>n?` ${n===1?'O cartão de progresso deste plano também sai':`Os ${n} cartões de progresso deste plano também saem`} de Minhas imagens.`:'';
+/* Mantendo o avanço, os pontos que vinham do cronograma ficam guardados em ptsKept para o nível não cair. */
+function removePlan(p,comLeituras){
+  const antes=compute().points.total;
+  if(comLeituras&&CC.plan[p.id].pct>=1)delete S.achAt.plano;
+  S.plans=S.plans.filter(x=>x.id!==p.id);
+  S.images=S.images.filter(im=>!(im.kind==='prog'&&im.pid===p.id));
+  if(comLeituras)S.reads=S.reads.filter(r=>r.plan!==p.id);
+  else S.ptsKept=(S.ptsKept||0)+Math.max(0,antes-compute().points.total);
+  HIST=[];R={v:'hoje',tab:'hoje'};render();
+}
 /* Não guarda duas imagens com as mesmas escolhas. Com foto da galeria guarda sempre, porque a foto pode ser outra. */
 function keepImage(rec){const k=x=>JSON.stringify({...x,at:0});if(rec.tpl==='foto'||!S.images.some(x=>k(x)===k(rec)))S.images.unshift(rec);}
 const vwBlob=()=>new Promise((res,rej)=>{const c=$('#vw-cv');if(!c){rej(new Error('sem imagem'));return;}c.toBlob(b=>b?res(b):rej(new Error('sem imagem')),'image/png');});
@@ -1348,9 +1370,11 @@ const A={
   postpone:(d)=>{const p=plan(d.p);postpone(p);SHEET=null;render();toast(`Fim adiado para ${fmtM(planEnd(p))}`);},
   retro:(d)=>{const p=plan(d.p);for(const day of pending(p))addReads(p,day,day.units,'retroativa',day.date);SHEET=null;render();toast('Leituras registradas na data prevista');},
   pause:(d)=>{const p=plan(d.p);togglePause(p);render();toast(p.paused?'Plano pausado':`Plano retomado. Término em ${fmtM(planEnd(p))}`);},
-  delPlan:(d)=>{const p=plan(d.p);const n=S.images.filter(im=>im.kind==='prog'&&im.pid===p.id).length;
-    sheet({t:'conf',title:'Apagar este plano?',text:`${p.name} sai da lista e o cronograma é apagado. As leituras feitas continuam contando na sequência, na cobertura e nos livros lidos, mas os pontos de conclusão deste plano saem. Notas e destaques não mudam.${n?` ${n===1?'O cartão de progresso deste plano também sai':`Os ${n} cartões de progresso deste plano também saem`} de Minhas imagens.`:''}`,ok:'Apagar plano',danger:true,
-      fn:()=>{S.plans=S.plans.filter(x=>x.id!==p.id);S.images=S.images.filter(im=>!(im.kind==='prog'&&im.pid===p.id));HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Plano apagado');}});},
+  delPlan:(d)=>{const p=plan(d.p);
+    if(planReads(p)){sheet({t:'delPlan',pid:p.id});return;}
+    sheet({t:'conf',title:'Apagar este plano?',text:`${p.name} sai da lista e o cronograma é apagado. Ainda não há leituras registradas nele.${cardsTxt(planCards(p))}`,ok:'Apagar plano',danger:true,fn:()=>{removePlan(p,false);toast('Plano apagado');}});},
+  delKeep:()=>{const p=plan(SHEET.pid);SHEET=null;removePlan(p,false);toast('Plano apagado. Seu avanço foi mantido');},
+  delAll:()=>{const p=plan(SHEET.pid);const n=planReads(p);sheet({t:'conf',title:'Apagar também as leituras?',text:`${n} ${pl(n,'leitura registrada','leituras registradas')} em ${p.name} ${pl(n,'será apagada','serão apagadas')}. Sua sequência, cobertura, livros lidos, pontos e conquistas podem diminuir. Não dá para desfazer.${cardsTxt(planCards(p))}`,ok:'Apagar tudo',danger:true,fn:()=>{removePlan(p,true);toast('Plano e leituras apagados');}});},
   quickMark:(d)=>{const p=plan(d.p),day=p.days.find(x=>x.id===d.d);addReads(p,day,day.units,'rápida');render();toast('Dia marcado como lido');},
   unmarkDay:(d)=>{S.reads=S.reads.filter(r=>!(r.plan===d.p&&r.day===d.d));render();toast('Marcação desfeita. Os pontos foram estornados.');},
   tapVerse:(d)=>{if(SEL.has(d.k))SEL.delete(d.k);else SEL.add(d.k);render();},
