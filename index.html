@@ -699,7 +699,7 @@ let NV={tab:'dest',q:'',color:null,col:null,sort:'recentes'};
 let READ_T=Date.now();let SCROLL_KEEP=false;
 function go(r,opt={}){if(!opt.replace)HIST.push(R);R=r;SEL.clear();SHEET=null;SCROLL_KEEP=false;render();}
 function back(){R=HIST.pop()||{v:'hoje',tab:'hoje'};SEL.clear();SHEET=null;SCROLL_KEEP=false;render();}
-function tab(t){HIST=[];const map={hoje:{v:'hoje'},biblia:{v:'biblia'},notas:{v:'notas'},progresso:{v:'progresso'}};R={...map[t],tab:t};SEL.clear();SHEET=null;SCROLL_KEEP=false;render();}
+function tab(t){HIST=[];const map={hoje:{v:'hoje'},biblia:{v:'biblia'},notas:{v:'notas'},progresso:{v:'progresso'},ajustes:{v:'ajustes'}};R={...map[t],tab:t};SEL.clear();SHEET=null;SCROLL_KEEP=false;render();}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200);}
 function sheet(s){SHEET=s;renderLayer();}
 
@@ -717,7 +717,7 @@ function renderNow(){
   scr.innerHTML=V();scr.scrollTop=keep;SCROLL_KEEP=true;
   const noTabs=['reader','wizard','editor','cartao'].includes(R.v);
   const tabs=$('#tabs');tabs.classList.toggle('off',noTabs);
-  const T=[['hoje','Hoje','hoje'],['biblia','Bíblia','biblia'],['notas','Anotações','notas'],['progresso','Progresso','prog']];
+  const T=[['hoje','Hoje','hoje'],['biblia','Bíblia','biblia'],['notas','Anotações','notas'],['progresso','Progresso','prog'],['ajustes','Ajustes','gear']];
   tabs.innerHTML=T.map(([k,l,i])=>`<button data-a="tab" data-t="${k}" ${R.tab===k?'aria-current="page"':''}>${ic(i)}<span>${l}</span></button>`).join('');
   renderLayer();after();
 }
@@ -855,7 +855,7 @@ function actbar(){
 
 /* ---------- Bíblia ---------- */
 function vBiblia(){
-  let h=`<div class="pad"><div class="row"><h1 class="screen-title" style="flex:1">Bíblia</h1>${BIB.list.length?`<button class="vpill" data-a="pickVer" data-scope="padrao">${esc(okVer(S.settings.version))}</button>`:''}<button class="iconbtn" data-a="openSettings" aria-label="Ajustes e versões">${ic('gear')}</button></div>`;
+  let h=`<div class="pad"><div class="row"><h1 class="screen-title" style="flex:1">Bíblia</h1>${BIB.list.length?`<button class="vpill" data-a="pickVer" data-scope="padrao">${esc(okVer(S.settings.version))}</button>`:''}</div>`;
   if(!BIB.list.length)h+=`<div class="notice"><p>${BIB.ok?'Nenhuma Bíblia importada neste celular. Importe os arquivos -lampada.json do Google Drive.':`Este navegador não permitiu guardar as Bíblias (${esc(BIB.err)}).`}</p>${BIB.ok?'<button class="lnk" data-a="importBib">Importar</button>':''}</div>`;
   for(const [a,b,n] of GRP){h+=`<div class="grp"><h4>${n}</h4>`;for(let x=a;x<b;x++)h+=`<button class="listrow" data-a="openBook" data-b="${x}"><span>${BK[x][0]}</span><small>${nC(x)} ${pl(nC(x),'capítulo','capítulos')}</small>${ic('chev','sm')}</button>`;h+=`</div>`;}
   return h+`</div>`;
@@ -916,9 +916,9 @@ function levelHTML(){
 }
 function lastReadPlan(){let best=null;for(const r of S.reads)if((!best||r.at>best.at)&&plan(r.plan))best=r;return best?plan(best.plan):S.plans[0];}
 function vProgresso(){
-  if(!S.plans.length)return `<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button>${levelHTML()}<button class="btn-sec" data-a="openImages">Minhas imagens (${S.images.length})</button></div>`;
+  if(!S.plans.length)return `<div class="pad"><h1 class="screen-title">Progresso</h1><div class="empty">Crie um plano para acompanhar sua evolução aqui.</div><button class="btn-chama" data-a="newPlan">Criar plano</button>${levelHTML()}<button class="btn-sec" data-a="openImages">Minhas imagens (${S.images.length})</button></div>`;
   const p=plan(R.pid)||lastReadPlan();const s=planStats(p),pc=s.pc,st=CC.streak;
-  let h=`<div class="pad"><div class="row" style="justify-content:space-between"><h1 class="screen-title">Progresso</h1><button class="iconbtn" data-a="openSettings" aria-label="Ajustes">${ic('gear')}</button></div>`;
+  let h=`<div class="pad"><h1 class="screen-title">Progresso</h1>`;
   if(S.plans.length>1)h+=`<div class="chips">${S.plans.map(q=>`<button class="chip" data-a="progPlan" data-p="${q.id}" aria-pressed="${q.id===p.id}"><i class="dot" style="background:${PCOL[q.color]};display:inline-block;margin-right:6px"></i>${esc(q.name)}</button>`).join('')}</div>`;
   const pct=pc.pct*100,C=2*Math.PI*50;
   const a=s.ahead;const pill=Math.abs(a)<.5?`<span class="pill ok">No ritmo</span>`:a>0?`<span class="pill ah">${fmtN(Math.round(a*10)/10)} ${pl(Math.round(a),'dia','dias')} à frente</span>`:`<span class="pill at">${fmtN(Math.round(-a*10)/10)} ${pl(Math.round(-a),'dia','dias')} atrás</span>`;
@@ -979,7 +979,8 @@ function booksGrid(){const cell=b=>{const x=CC.book[b];const f=x.n/x.t;return `<
 /* ---------- Ajustes e imagens ---------- */
 function vAjustes(){
   const s=S.settings;
-  let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Ajustes</h1></div><div class="pad">`;
+  /* Pela aba não há para onde voltar; a seta só aparece quando se chega aqui de outra tela. */
+  let h=HIST.length?`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>Ajustes</h1></div><div class="pad">`:`<div class="pad"><h1 class="screen-title">Ajustes</h1>`;
   h+=`<h2 class="sec-h">Versões da Bíblia</h2>`;
   if(!BIB.ok)h+=`<div class="notice"><p>Este navegador não permitiu guardar as Bíblias (${esc(BIB.err)}). Abra o app instalado na tela inicial, fora do modo anônimo.</p></div>`;
   if(!BIB.list.length)h+=`<div class="empty">Nenhuma versão importada neste celular.</div>`;
@@ -1432,14 +1433,13 @@ const A={
   vwSave:async()=>{try{download(await vwBlob(),`lampada-${TODAY}.png`);toast('Imagem salva');}catch(e){toast('Não consegui salvar a imagem');}},
   vwEdit:()=>{const im=S.images[SHEET.i];if(!im)return;if(im.kind==='prog')go({v:'cartao',tab:R.tab,pc:JSON.parse(JSON.stringify(im))});else openEditor({...im,tpl:im.tpl==='foto'?'aurora':im.tpl});},
   vwDel:()=>{const i=SHEET.i;sheet({t:'conf',title:'Apagar esta imagem?',text:'Ela sai de Minhas imagens. Os arquivos que você já salvou ou compartilhou não são afetados.',ok:'Apagar',danger:true,fn:()=>{S.images.splice(i,1);render();toast('Imagem apagada');}});},
-  openSettings:()=>go({v:'ajustes',tab:R.tab}),
   setTheme:(d)=>{S.settings.theme=d.t;render();},
   toggleCalm:()=>{S.settings.calm=!S.settings.calm;render();toast(S.settings.calm?'Leitura tranquila ligada':'Leitura tranquila desligada');},
   eraseAll:()=>sheet({t:'conf',title:'Apagar meus dados?',text:'Apaga planos, leituras, notas, destaques, marcadores e imagens deste celular. As Bíblias importadas continuam. Se quiser guardar, faça um backup antes.',ok:'Apagar tudo',danger:true,fn:()=>{const keep=S.settings.version;S=seed();S.settings.version=keep;HIST=[];R={v:'hoje',tab:'hoje'};render();toast('Dados apagados');}}),
   confOk:()=>{const f=SHEET&&SHEET.fn;SHEET=null;renderLayer();if(f)f();},
   importBib:()=>{if(!BIB.ok){toast('Este navegador não permite guardar as Bíblias');return;}const i=$('#in-bib');i.value='';i.click();},
   restoreBak:()=>{const i=$('#in-bak');i.value='';i.click();},
-  goVersions:()=>{SHEET=null;if(R.v==='ajustes')render();else go({v:'ajustes',tab:R.tab});},
+  goVersions:()=>{SHEET=null;if(R.v==='ajustes')render();else go({v:'ajustes',tab:'ajustes'});},
   verInfo:(d)=>sheet({t:'sobre',v:d.v}),
   setDefault:(d)=>{S.settings.version=d.v;SHEET=null;render();toast(`${d.v} é a versão padrão`);},
   delVer:(d)=>sheet({t:'conf',title:`Remover ${d.v} do celular?`,text:'O texto desta versão sai do celular. Notas, destaques e leituras continuam. Para ter a versão de volta, importe o arquivo de novo.',ok:'Remover',danger:true,fn:async()=>{try{await removeBiblia(d.v);if(!hasVer(S.settings.version))S.settings.version=okVer(...VORD);if(R.ver===d.v)R.ver=null;render();toast(`${d.v} removida`);storageInfo().then(render);}catch(e){toast('Não consegui remover: '+(e&&e.message||e));}}}),
