@@ -392,7 +392,7 @@ const pd=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d);};
 const addD=(k,n)=>{const d=pd(k);d.setDate(d.getDate()+n);return dk(d);};
 const diffD=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
 const wd=k=>pd(k).getDay();
-const TODAY=dk(new Date());
+let TODAY=dk(new Date());
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const DS=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
 const DSC=['dom','seg','ter','qua','qui','sex','sáb'];
@@ -675,7 +675,7 @@ function compute(){
   const timed=S.reads.filter(r=>r.secs);if(timed.length>=3){const sv=timed.reduce((s,r)=>s+r.secs,0)/timed.reduce((s,r)=>s+uv(r),0);if(sv>2&&sv<30)SECS_PER_V=sv;}
   return C;
 }
-function pending(p){const pc=CC.plan[p.id];return p.days.filter((d,i)=>d.date<TODAY&&!pc.dayDone[i]);}
+function pending(p){if(p.paused)return [];const pc=CC.plan[p.id];return p.days.filter((d,i)=>d.date<TODAY&&!pc.dayDone[i]);}
 
 /* ---------------- navegação ---------------- */
 let R={v:'hoje',tab:'hoje'};let HIST=[];let SHEET=null;let SEL=new Set();let W=null;
@@ -771,7 +771,7 @@ function vHoje(){
 function vPlano(){
   const p=plan(R.pid);if(!p)return vHoje();const pc=CC.plan[p.id];const pend=pending(p);
   let h=`<div class="topbar line"><button class="iconbtn" data-a="back" aria-label="Voltar">${ic('back')}</button><h1>${esc(p.name)}</h1></div><div class="pad">`;
-  h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version?esc(p.version)+(hasVer(p.version)?'':' (não importada neste celular)'):'não escolhida'}.${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
+  h+=`<p class="sub">Início ${fmtS(p.start)}, término ${fmtS(planEnd(p))}. Versão ${p.version?esc(p.version)+(hasVer(p.version)?'':' (não importada neste celular)'):'não escolhida'}. ${p.wk.every(Boolean)?'Todos os dias':'Dias: '+p.wk.map((x,i)=>x?DSC[i]:null).filter(Boolean).join(', ')}.</p>`;
   h+=`<div class="h-prog" style="color:var(--tinta-2);margin:0"><div class="bar" style="background:var(--linha)"><i style="width:${(pc.pct*100).toFixed(1)}%"></i></div><span class="num">${Math.floor(pc.pct*100)}%</span></div>`;
   h+=`<div class="chips">${pend.length?`<button class="chip" data-a="catchUp" data-p="${p.id}">Colocar em dia</button><button class="chip" data-a="postpone" data-p="${p.id}">Adiar o fim</button>`:''}<button class="chip" data-a="pause" data-p="${p.id}">${p.paused?'Retomar plano':'Pausar plano'}</button><button class="chip" data-a="shareProg" data-p="${p.id}">Compartilhar progresso</button></div>`;
   h+=`<p class="sub">Leu na Bíblia impressa? Use Marcar lido na linha do dia. Conta igual para o plano.</p><div class="daylist">`;
@@ -879,7 +879,7 @@ function vNotas(){
 /* ---------- Progresso ---------- */
 function planStats(p){
   const pc=CC.plan[p.id];const T=pc.tot/p.days.length;
-  let expected=0,todayRead=0;p.days.forEach((d,i)=>{if(d.date<TODAY)expected+=dayV(d);if(d.date===TODAY)for(const u of d.units)if(CC.idx.has(p.id+'|'+d.id+'|'+ukey(u)))todayRead+=uv(u);});
+  let expected=0,todayRead=0;const lim=p.paused?(p.pausedAt||''):TODAY;p.days.forEach((d,i)=>{if(d.date<lim)expected+=dayV(d);if(d.date===TODAY)for(const u of d.units)if(CC.idx.has(p.id+'|'+d.id+'|'+ukey(u)))todayRead+=uv(u);});
   const ahead=(pc.rd-expected-todayRead)/T;
   const idxR=(expected+todayRead)?pc.rd/(expected+todayRead):1;
   const age=diffD(p.start,TODAY)+1;
@@ -899,7 +899,7 @@ function vProgresso(){
   const pct=pc.pct*100,C=2*Math.PI*50;
   const a=s.ahead;const pill=Math.abs(a)<.5?`<span class="pill ok">No ritmo</span>`:a>0?`<span class="pill ah">${fmtN(Math.round(a*10)/10)} ${pl(Math.round(a),'dia','dias')} à frente</span>`:`<span class="pill at">${fmtN(Math.round(-a*10)/10)} ${pl(Math.round(-a),'dia','dias')} atrás</span>`;
   h+=`<div class="ringrow"><div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--linha)" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="var(--chama)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C*pct/100).toFixed(1)} ${C.toFixed(1)}"/></svg><div class="rv"><div><b class="num">${Math.floor(pct)}%</b><small>do plano</small></div></div></div>
-  <div class="ringinfo"><strong>${esc(p.name)}</strong><span class="num">${fmtN(pc.rd)} de ${fmtN(pc.tot)} versículos</span>${pill}${a<-.5?`<button class="lnk" data-a="catchUp" data-p="${p.id}" style="text-align:left">Colocar em dia</button>`:''}</div></div>`;
+  <div class="ringinfo"><strong>${esc(p.name)}</strong><span class="num">${fmtN(pc.rd)} de ${fmtN(pc.tot)} versículos</span>${pill}${a<-.5&&!p.paused?`<button class="lnk" data-a="catchUp" data-p="${p.id}" style="text-align:left">Colocar em dia</button>`:''}</div></div>`;
   const fc=s.age<7?'A partir do 7º dia':s.forecast?capi(fmtM(s.forecast.date)):'Sem leituras recentes';
   const fcs=s.forecast&&s.age>=7?(s.forecast.delta===0?'Na data prevista':s.forecast.delta>0?`${s.forecast.delta} ${pl(s.forecast.delta,'dia','dias')} depois do previsto`:`${-s.forecast.delta} ${pl(-s.forecast.delta,'dia','dias')} antes do previsto`):`Fim previsto: ${fmtS(planEnd(p))}`;
   const nInt=S.notes.length,nH=Object.keys(S.hl).length,nM=S.marks.length;
@@ -1305,7 +1305,7 @@ const A={
   catchUp:(d)=>{const p=plan(d.p);catchUp(p);SHEET=null;render();toast('Plano colocado em dia');},
   postpone:(d)=>{const p=plan(d.p);postpone(p);SHEET=null;render();toast(`Fim adiado para ${fmtM(planEnd(p))}`);},
   retro:(d)=>{const p=plan(d.p);for(const day of pending(p))addReads(p,day,day.units,'retroativa',day.date);SHEET=null;render();toast('Leituras registradas na data prevista');},
-  pause:(d)=>{const p=plan(d.p);p.paused=!p.paused;render();toast(p.paused?'Plano pausado':'Plano retomado');},
+  pause:(d)=>{const p=plan(d.p);togglePause(p);render();toast(p.paused?'Plano pausado':`Plano retomado. Término em ${fmtM(planEnd(p))}`);},
   quickMark:(d)=>{const p=plan(d.p),day=p.days.find(x=>x.id===d.d);addReads(p,day,day.units,'rápida');render();toast('Dia marcado como lido');},
   unmarkDay:(d)=>{S.reads=S.reads.filter(r=>!(r.plan===d.p&&r.day===d.d));render();toast('Marcação desfeita. Os pontos foram estornados.');},
   tapVerse:(d)=>{if(SEL.has(d.k))SEL.delete(d.k);else SEL.add(d.k);render();},
@@ -1410,6 +1410,22 @@ function catchUp(p){
 }
 function postpone(p){const pc=CC.plan[p.id];const mv=p.days.filter((d,i)=>!pc.dayDone[i]);let d=TODAY;for(const day of mv){while(!(p.wk[wd(d)]&&!p.rests.includes(d)))d=addD(d,1);day.date=d;d=addD(d,1);}p.days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);}
 
+/* Ao retomar, os dias da pausa viram descanso (não quebram a sequência) e as leituras não feitas andam para a frente. */
+function togglePause(p){
+  if(!p.paused){p.paused=true;p.pausedAt=TODAY;return;}
+  const pc=CC.plan[p.id];const undone=p.days.filter((d,i)=>!pc.dayDone[i]);
+  const from=p.pausedAt||(undone.length?undone[0].date:TODAY);
+  if(from<TODAY){
+    for(let d=from;d<TODAY;d=addD(d,1))if(!p.rests.includes(d))p.rests.push(d);
+    const mv=undone.filter(d=>d.date>=from),ids=new Set(mv.map(d=>d.id));
+    const used=new Set(p.days.filter(d=>!ids.has(d.id)).map(d=>d.date));
+    let d=TODAY;
+    for(const day of mv){if(day.date>d)d=day.date;while(!(p.wk[wd(d)]&&!p.rests.includes(d)&&!used.has(d)))d=addD(d,1);day.date=d;d=addD(d,1);}
+    p.days.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  }
+  p.paused=false;delete p.pausedAt;
+}
+
 /* ---------------- importação e backup ---------------- */
 async function onBibFiles(files){
   if(!files||!files.length)return;
@@ -1468,6 +1484,13 @@ document.addEventListener('change',e=>{const t=e.target;const k=t.dataset.in;if(
   if(k==='wv1'||k==='wv2'){const b=+t.dataset.b,c=+t.dataset.c;const e2=W.sel.get(b);const cur=e2.rng.get(c)||[1,nV(b,c)];let v=Math.min(nV(b,c),Math.max(1,+t.value||1));if(k==='wv1')cur[0]=v;else cur[1]=v;if(cur[0]>cur[1])cur.reverse();if(cur[0]===1&&cur[1]===nV(b,c))e2.rng.delete(c);else e2.rng.set(c,cur);render();return;}
   if(k==='edfile'){const f=t.files&&t.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{PHOTO=img;R.ed.tpl='foto';R.ed.color='#FFFFFF';render();};img.src=rd.result;};rd.readAsDataURL(f);return;}
 });
+
+/* O app instalado pode ficar dias aberto em segundo plano: confere a data ao voltar e a cada minuto. */
+function checkDay(){const h=dk(new Date());if(h===TODAY)return;const old=TODAY;TODAY=h;if(W&&W.start===old)W.start=h;refresh();}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkDay();});
+window.addEventListener('pageshow',checkDay);
+window.addEventListener('focus',checkDay);
+setInterval(checkDay,60000);
 
 /* ---------------- início ---------------- */
 S=load();

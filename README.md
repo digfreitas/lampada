@@ -2,7 +2,7 @@
 
 App pessoal de plano de leitura bíblica, instalável no celular e que funciona sem internet.
 
-Esta é a versão de demonstração: o texto bíblico é de exemplo e os dados ficam só no aparelho.
+Esta é a versão pessoal: o texto bíblico é importado de arquivos guardados no Google Drive e os dados ficam só no aparelho.
 
 ## Regra deste repositório
 
